@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cooking Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(-45deg, #f5e6f0, #e8dff5, #f0e0f0, #e5d9f2);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+            animation: slideInLeft 0.5s ease;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes slideInLeft {
+            from { transform: translateX(-100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .sidebar.hidden { 
+            display: none;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(250, 177, 160, 0.3);
+            animation: float 3s ease-in-out infinite;
+            position: relative;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fab1a0;
+            font-size: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.3s;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar:hover { transform: scale(1.1); }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .user-name {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 700;
+            color: #8b6f8f;
+        }
+        
+        .new-chat-btn {
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            border: none;
+            color: #8b6f8f;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(250, 177, 160, 0.3);
+        }
+        
+        .new-chat-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(250, 177, 160, 0.4);
+        }
+        
+        .feature-btn {
+            width: 100%;
+            border: none;
+            color: white;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            text-align: left;
+        }
+        
+        .feature-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .chat-list::-webkit-scrollbar { width: 6px; }
+        .chat-list::-webkit-scrollbar-thumb { 
+            background: linear-gradient(135deg, #fab1a0, #ffeaa7);
+            border-radius: 10px;
+        }
+        
+        .chat-item {
+            padding: 16px;
+            background: rgba(250, 177, 160, 0.15);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .chat-item:hover { 
+            background: rgba(250, 177, 160, 0.25);
+            transform: translateX(5px);
+        }
+        
+        .chat-item.active { 
+            background: linear-gradient(135deg, rgba(250, 177, 160, 0.3) 0%, rgba(255, 234, 167, 0.3) 100%);
+            border-left: 4px solid #fab1a0;
+        }
+        
+        .chat-item-title {
+            font-weight: 600;
+            color: #8b6f8f;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .chat-item-date {
+            font-size: 12px;
+            color: #718096;
+        }
+        
+        .delete-chat {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #fab1a0;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .chat-item:hover .delete-chat { opacity: 1; }
+        .delete-chat:hover { transform: translateY(-50%) scale(1.1); }
+        
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.5s ease;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shine 3s infinite;
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .toggle-sidebar {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #8b6f8f;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 10px 12px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            z-index: 1;
+        }
+        
+        .toggle-sidebar:hover { 
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+        
+        .header-icon { 
+            font-size: 32px;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8b6f8f;
+            z-index: 1;
+        }
+        
+        .toolbar {
+            background: linear-gradient(135deg, rgba(255, 214, 232, 0.3), rgba(230, 213, 245, 0.3));
+            padding: 16px 32px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border-bottom: 1px solid rgba(250, 177, 160, 0.2);
+        }
+        
+        .upload-btn {
+            background: white;
+            border: 2px solid rgba(250, 177, 160, 0.3);
+            color: #fab1a0;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-btn:hover {
+            border-color: #fab1a0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(250, 177, 160, 0.3);
+        }
+        
+        #fileInput { display: none; }
+        
+        .file-info {
+            font-size: 13px;
+            color: #718096;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            background: white;
+        }
+        
+        .chat-container::-webkit-scrollbar { width: 8px; }
+        .chat-container::-webkit-scrollbar-thumb { 
+            background: linear-gradient(135deg, #fab1a0, #ffeaa7);
+            border-radius: 10px;
+        }
+        
+        .message {
+            margin-bottom: 24px;
+            animation: messageSlide 0.5s ease;
+        }
+        
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-inner {
+            display: flex;
+            gap: 16px;
+            max-width: 900px;
+        }
+        
+        .message.user .message-inner { margin-left: auto; flex-direction: row-reverse; }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            font-weight: 700;
+            animation: avatarPop 0.5s ease;
+        }
+        
+        @keyframes avatarPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .user .message-avatar {
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            color: white;
+        }
+        
+        .bot .message-avatar {
+            background: linear-gradient(135deg, #d5c5f0 0%, #e6d5f5 100%);
+        }
+        
+        .message-content {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 16px;
+            line-height: 1.6;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .message-content:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user .message-content {
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            color: #8b6f8f;
+        }
+        
+        .bot .message-content {
+            background: white;
+            color: #2d3748;
+            border: 2px solid rgba(213, 197, 240, 0.4);
+            box-shadow: 0 4px 12px rgba(213, 197, 240, 0.2);
+        }
+        
+        .input-container {
+            padding: 24px 32px;
+            background: white;
+            border-top: 1px solid rgba(250, 177, 160, 0.2);
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: rgba(250, 177, 160, 0.08);
+            border: 2px solid rgba(250, 177, 160, 0.3);
+            border-radius: 20px;
+            padding: 12px 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-wrapper:focus-within {
+            border-color: #fab1a0;
+            box-shadow: 0 0 0 4px rgba(250, 177, 160, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        #userInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #2d3748;
+            font-size: 15px;
+            outline: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            resize: none;
+            max-height: 200px;
+        }
+        
+        #userInput::placeholder { color: #a0aec0; }
+        
+        #sendBtn {
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px rgba(250, 177, 160, 0.3);
+        }
+        
+        #sendBtn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 24px rgba(250, 177, 160, 0.4);
+        }
+        
+        #sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .loading { display: none; text-align: center; padding: 20px; }
+        .loading.active { display: block; }
+        
+        .dot-pulse {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fab1a0;
+            animation: dotPulse 1.5s infinite;
+            display: inline-block;
+            margin: 0 4px;
+        }
+        
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 60px 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .welcome-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+        }
+        
+        .welcome-message h2 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .welcome-message p {
+            font-size: 15px;
+            color: #718096;
+            margin-bottom: 32px;
+        }
+        
+        .suggestions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .suggestion-card {
+            background: white;
+            border: 2px solid rgba(250, 177, 160, 0.3);
+            padding: 20px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .suggestion-card:hover {
+            border-color: #ffc9ba;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(255, 201, 186, 0.2);
+        }
+        
+        .suggestion-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+        
+        .suggestion-desc {
+            font-size: 14px;
+            color: #718096;
+            line-height: 1.5;
+        }
+        
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .login-modal.hidden { display: none; }
+        
+        .login-box {
+            background: white;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            max-width: 440px;
+            width: 90%;
+            animation: modalPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes modalPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .login-icon {
+            font-size: 80px;
+            text-align: center;
+            margin-bottom: 24px;
+            animation: iconSpin 3s ease-in-out infinite;
+        }
+        
+        @keyframes iconSpin {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(10deg) scale(1.1); }
+        }
+        
+        .login-box h2 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .login-box p {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(250, 177, 160, 0.08);
+            border: 2px solid rgba(250, 177, 160, 0.3);
+            border-radius: 14px;
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .login-box input:focus {
+            border-color: #fab1a0;
+            box-shadow: 0 0 0 4px rgba(250, 177, 160, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .login-box button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(250, 177, 160, 0.3);
+        }
+        
+        .login-box button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(250, 177, 160, 0.4);
+        }
+        
+        .user-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            z-index: 100;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .user-menu.hidden { display: none; }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-menu-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .user-menu-item:last-child { border-bottom: none; }
+        
+        .user-menu-item:hover {
+            background: rgba(250, 177, 160, 0.1);
+            padding-left: 24px;
+        }
+        
+        .user-menu-item.danger { color: #e53e3e; }
+        .user-menu-item.danger:hover { background: rgba(229, 62, 62, 0.1); }
+        
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .settings-modal.hidden { display: none; }
+        
+        .settings-box {
+            background: white;
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            animation: modalPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(250, 177, 160, 0.2);
+        }
+        
+        .settings-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        
+        .close-btn {
+            background: #fab1a0;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        
+        .close-btn:hover { transform: scale(1.1); }
+        
+        .settings-section {
+            margin-bottom: 24px;
+        }
+        
+        .settings-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 12px;
+        }
+        
+        .settings-section input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(250, 177, 160, 0.08);
+            border: 2px solid rgba(250, 177, 160, 0.3);
+            border-radius: 12px;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 8px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .settings-section input:focus {
+            border-color: #fab1a0;
+            box-shadow: 0 0 0 4px rgba(250, 177, 160, 0.1);
+        }
+        
+        .settings-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        
+        .settings-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(250, 177, 160, 0.3);
+        }
+        
+        .settings-btn.danger {
+            background: linear-gradient(135deg, #e53e3e 0%, #fc8181 100%);
+        }
+        
+        .settings-btn.danger:hover {
+            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #8b6f8f;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="file-modal hidden" id="fileModal">
+        <div class="file-modal-content">
+            <div class="file-modal-header">
+                <div class="file-modal-title" id="fileModalTitle"></div>
+                <button class="file-modal-close" onclick="closeFileModal()">×</button>
+            </div>
+            <div class="file-modal-body" id="fileModalContent"></div>
+        </div>
+    </div>
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <div class="login-icon">👨‍🍳</div>
+            <h2>Welcome Back!</h2>
+            <p>Sign in to your cooking journey</p>
+            <input type="text" id="usernameInput" placeholder="Your name" autofocus>
+            <input type="password" id="passwordInput" placeholder="Password" onkeypress="handleLoginKeyPress(event)">
+            <button onclick="login()">Login / Register</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="user-profile">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-name" id="userName">Guest</div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+                <div class="user-menu hidden" id="userMenu">
+                    <div class="user-menu-item" onclick="openSettings()">⚙️ Settings</div>
+                    <div class="user-menu-item" onclick="logout()">🚪 Logout</div>
+                </div>
+            </div>
+            <button class="new-chat-btn" onclick="createNewChat()">+ New Chat</button>
+            <div class="chat-list" id="chatList"></div>
+            <div id="streaks-display" style="margin-top: 16px; padding: 20px; background: linear-gradient(135deg, #ffeaa7 0%, #ffd89b 100%); border-radius: 16px; text-align: center; box-shadow: 0 4px 12px rgba(255, 234, 167, 0.3);"></div>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 2px solid rgba(250, 177, 160, 0.2);">
+                <button class="feature-btn" onclick="openDailyTracker()" style="background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%);">📊 Daily Tracker</button>
+                <button class="feature-btn" onclick="openMealPlanner()" style="background: linear-gradient(135deg, #d5c5f0 0%, #e6d5f5 100%);">📅 Meal Planner</button>
+                <button class="feature-btn" onclick="openShoppingList()" style="background: linear-gradient(135deg, #c3f0ca 0%, #d4f5d9 100%);">🛒 Shopping List</button>
+            </div>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(124, 111, 158, 0.2);">
+                <div style="font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 12px; padding: 0 4px;">📁 Uploaded Files</div>
+                <div id="fileList" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="header">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+                <span class="header-icon">🍳</span>
+                <h1>AI Cooking Assistant</h1>
+            </div>
+            
+            <div class="chat-container" id="chatContainer">
+                <div class="welcome-message">
+                    <div class="welcome-icon">🍳</div>
+                    <h2>Your Personal Cooking Assistant</h2>
+                    <p>Get personalized recipes, nutrition advice, and meal planning help!</p>
+                    <div class="suggestions">
+                        <div class="suggestion-card" onclick="sendSuggestion('Show me high-protein low-carb recipes')">
+                            <div class="suggestion-icon">💪</div>
+                            <div class="suggestion-title">High-Protein Meals</div>
+                            <div class="suggestion-desc">Discover delicious low-carb recipes perfect for building muscle and staying energized</div>
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('I need a vegan dinner idea')">
+                            <div class="suggestion-icon">🌱</div>
+                            <div class="suggestion-title">Vegan Recipes</div>
+                            <div class="suggestion-desc">Explore plant-based meals that are nutritious, flavorful, and easy to prepare</div>
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Quick breakfast under 15 minutes')">
+                            <div class="suggestion-icon">⏰</div>
+                            <div class="suggestion-title">Quick Breakfast</div>
+                            <div class="suggestion-desc">Fast and healthy morning meals to kickstart your day in under 15 minutes</div>
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Healthy meal for weight loss')">
+                            <div class="suggestion-icon">🥗</div>
+                            <div class="suggestion-title">Weight Loss Meals</div>
+                            <div class="suggestion-desc">Nutritious low-calorie recipes that help you reach your health goals</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading"><div class="dot-pulse"></div></div>
+            
+            <div class="input-container">
+                <input type="file" id="fileInput" accept=".txt,.docx" onchange="uploadFile()" multiple style="display: none;">
+                <div class="input-wrapper">
+                    <button class="upload-icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload text files">📎</button>
+                    <textarea 
+                        id="userInput" 
+                        placeholder="Ask me anything about cooking..." 
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                    ></textarea>
+                    <button id="sendBtn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-modal hidden" id="settingsModal">
+        <div class="settings-box">
+            <div class="settings-header">
+                <h2>⚙️ Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">×</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>📸 Profile Photo</h3>
+                <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">Upload your profile picture</p>
+                <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" onchange="uploadProfilePhoto()">
+                <button class="settings-btn" onclick="document.getElementById('profilePhotoInput').click()">Choose Photo</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>🍽️ Nutrition Profile</h3>
+                <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">Set your dietary preferences and goals</p>
+                
+                <label style="font-size: 13px; font-weight: 600; color: #2d3748; display: block; margin-bottom: 6px;">Dietary Restrictions</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2d3748;">
+                        <input type="checkbox" id="vegan" value="vegan"> Vegan
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2d3748;">
+                        <input type="checkbox" id="vegetarian" value="vegetarian"> Vegetarian
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2d3748;">
+                        <input type="checkbox" id="glutenFree" value="gluten-free"> Gluten-Free
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2d3748;">
+                        <input type="checkbox" id="dairyFree" value="dairy-free"> Dairy-Free
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2d3748;">
+                        <input type="checkbox" id="nutFree" value="nut-free"> Nut-Free
+                    </label>
+                </div>
+                
+                <label style="font-size: 13px; font-weight: 600; color: #2d3748; display: block; margin-bottom: 6px;">Health Goals</label>
+                <select id="healthGoal" style="width: 100%; padding: 12px 16px; background: rgba(250, 177, 160, 0.08); border: 2px solid rgba(250, 177, 160, 0.3); border-radius: 12px; color: #2d3748; font-size: 14px; margin-bottom: 12px; outline: none;">
+                    <option value="">Select a goal</option>
+                    <option value="weight-loss">Weight Loss</option>
+                    <option value="muscle-gain">Muscle Gain</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="heart-health">Heart Health</option>
+                    <option value="energy-boost">Energy Boost</option>
+                </select>
+                
+                <label style="font-size: 13px; font-weight: 600; color: #2d3748; display: block; margin-bottom: 6px;">Allergies (comma separated)</label>
+                <input type="text" id="allergies" placeholder="e.g., shellfish, soy, eggs" style="width: 100%; padding: 12px 16px; background: rgba(250, 177, 160, 0.08); border: 2px solid rgba(250, 177, 160, 0.3); border-radius: 12px; color: #2d3748; font-size: 14px; margin-bottom: 12px; outline: none;">
+                
+                <button class="settings-btn" onclick="saveNutritionProfile()">Save Nutrition Profile</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>⭐ Favorite Recipes</h3>
+                <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">View and manage your saved recipes</p>
+                <div id="favoritesList" style="max-height: 150px; overflow-y: auto; font-size: 13px; color: #2d3748;"></div>
+            </div>
+            
+            <div class="settings-section">
+                <h3>🔐 Change Password</h3>
+                <input type="password" id="currentPassword" placeholder="Current password">
+                <input type="password" id="newPassword" placeholder="New password">
+                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                <button class="settings-btn" onclick="changePassword()">Update Password</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>🗑️ Clear Chat History</h3>
+                <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">This will permanently delete all your chat conversations.</p>
+                <button class="settings-btn danger" onclick="clearChatHistory()">Clear All Chats</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>📁 Clear Uploaded Files</h3>
+                <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">Remove all uploaded documents from your account.</p>
+                <button class="settings-btn danger" onclick="clearUploadedFiles()">Clear All Files</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-modal hidden" id="mealPlannerModal">
+        <div class="settings-box" style="max-width: 1000px;">
+            <div class="settings-header">
+                <h2>📅 Weekly Meal Planner</h2>
+                <button class="close-btn" onclick="closeMealPlanner()">×</button>
+            </div>
+            <p style="font-size: 14px; color: #718096; margin-bottom: 20px; text-align: center;">Plan your meals for the week ahead. Each day gets its own colorful card!</p>
+            <div id="mealPlanContainer"></div>
+            <button class="settings-btn" onclick="saveMealPlan()" style="max-width: 300px; margin: 0 auto; display: block;">💾 Save Meal Plan</button>
+        </div>
+    </div>
+
+    <div class="settings-modal hidden" id="dailyTrackerModal">
+        <div class="settings-box" style="max-width: 800px;">
+            <div class="settings-header">
+                <h2>📊 Daily Nutrition Tracker</h2>
+                <button class="close-btn" onclick="closeDailyTracker()">×</button>
+            </div>
+            <div id="nutrition-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;"></div>
+            <button onclick="window.showLogMealModal()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 20px;">+ Log Meal</button>
+            <h3 style="margin-bottom: 12px; color: #2d3748;">Today's Meals</h3>
+            <div id="today-meals" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+            <h3 style="margin-bottom: 12px; color: #2d3748;">💡 Smart Recommendations</h3>
+            <div id="recommendations" style="font-size: 14px; color: #2d3748;"></div>
+        </div>
+    </div>
+
+    <div class="settings-modal hidden" id="shoppingListModal">
+        <div class="settings-box">
+            <div class="settings-header">
+                <h2>🛒 Shopping List</h2>
+                <button class="close-btn" onclick="closeShoppingList()">×</button>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="newShoppingItem" placeholder="Add item..." 
+                    style="width: calc(100% - 80px); padding: 10px; border: 2px solid rgba(250, 177, 160, 0.3); border-radius: 10px; outline: none;">
+                <button onclick="addShoppingItem()" style="padding: 10px 20px; background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%); color: white; border: none; border-radius: 10px; cursor: pointer; margin-left: 8px;">Add</button>
+            </div>
+            <div id="shoppingItems" style="max-height: 400px; overflow-y: auto; margin-bottom: 16px;"></div>
+            <button class="settings-btn danger" onclick="clearShoppingList()">Clear All</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/session-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/autonomous-agent.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat-messages.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/files.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app-init.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/meal-features.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/nutrition-tracker.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/nutrition-init.js') }}" type="module"></script>
+</body>
+</html>
+
+<style>
+.file-item {
+    padding: 10px 12px;
+    background: rgba(250, 177, 160, 0.15);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.file-item:hover {
+    background: rgba(250, 177, 160, 0.25);
+    transform: translateX(3px);
+}
+
+.file-icon { font-size: 16px; flex-shrink: 0; }
+
+.file-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.delete-file {
+    background: #fab1a0;
+    color: white;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+    font-size: 12px;
+}
+
+.file-item:hover .delete-file { opacity: 1; }
+
+.file-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.file-modal.hidden { display: none; }
+
+.file-modal-content {
+    background: white;
+    padding: 32px;
+    border-radius: 20px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+}
+
+.file-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid rgba(124, 111, 158, 0.2);
+}
+
+.file-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.file-modal-close {
+    background: #fab1a0;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+}
+
+.file-modal-close:hover { transform: scale(1.1); }
+
+.file-modal-body {
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #2d3748;
+    line-height: 1.6;
+    background: #f7fafc;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.upload-icon-btn {
+    background: transparent;
+    border: none;
+    color: #fab1a0;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.upload-icon-btn:hover {
+    background: rgba(250, 177, 160, 0.1);
+    transform: scale(1.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.stat {
+    background: linear-gradient(135deg, #ffeaa7 0%, #ffd89b 100%);
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat span {
+    display: block;
+    font-size: 12px;
+    color: #8b6f8f;
+    margin-bottom: 4px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 24px;
+    color: #2d3748;
+    font-weight: 700;
+}
+
+.meal-log {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(250, 177, 160, 0.1);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.meal-log button {
+    background: #fab1a0;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.rec-card {
+    background: white;
+    border: 2px solid rgba(116, 185, 255, 0.3);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.rec-tip {
+    background: linear-gradient(135deg, #ffeaa7 0%, #ffd89b 100%);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #2d3748;
+}
+
+.streaks-card {
+    text-align: center;
+    padding: 4px 0;
+}
+
+.streak-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 4px 0;
+    line-height: 1;
+}
+
+.streak-best {
+    font-size: 13px;
+    color: #8b6f8f;
+    font-weight: 500;
+}
+
+.streak-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #8b6f8f;
+    margin-bottom: 8px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+.modal .modal-content {
+    background: white;
+    padding: 32px;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+}
+
+.modal h3 {
+    margin-bottom: 16px;
+    color: #2d3748;
+}
+
+.modal select,
+.modal input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 2px solid rgba(250, 177, 160, 0.3);
+    border-radius: 10px;
+    outline: none;
+    font-size: 14px;
+}
+
+.modal button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-right: 8px;
+}
+</style>
