@@ -16,19 +16,7 @@ That's it! The script will output your app URL.
 
 ## Step-by-Step Deployment
 
-### Step 1: Configure AWS Region
-
-```bash
-# Set your preferred region
-export AWS_REGION=ap-southeast-2
-
-# Verify Bedrock is available in your region
-aws bedrock list-foundation-models --region $AWS_REGION
-```
-
-**Region:** ap-southeast-2 (Sydney)
-
-### Step 2: Deploy Infrastructure
+### Step 1: Deploy Infrastructure
 
 ```bash
 ./scripts/deploy.sh
@@ -47,7 +35,7 @@ This script will:
 🌐 Your app: https://xxxxx.execute-api.ap-southeast-2.amazonaws.com/prod
 ```
 
-### Step 3: Test Your Deployment
+### Step 2: Test Your Deployment
 
 ```bash
 # Get your API endpoint
@@ -65,7 +53,7 @@ curl -X POST $API_ENDPOINT/chat \
   -d '{"query": "suggest a healthy breakfast"}'
 ```
 
-### Step 4: Index Recipes (Optional)
+### Step 3: Index Recipes (Optional)
 
 ```bash
 # Set environment variables
