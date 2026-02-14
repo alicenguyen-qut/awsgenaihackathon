@@ -90,7 +90,7 @@ python src/app.py
 make run-aws
 ```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for full AWS deployment instructions.
+See [AWS_DEPLOY.md](AWS_DEPLOY.md) for full AWS deployment instructions.
 
 ## Project Structure
 
@@ -102,11 +102,10 @@ awsgenaihackathon/
 ├── infrastructure/                # CloudFormation templates
 │   └── cloudformation.yaml
 ├── scripts/                       # Deployment scripts
-│   ├── deploy_full.sh
-│   ├── deploy_lambda.sh
-│   ├── index_recipes.py          # Recipe indexing (Titan V2)
-│   ├── package_lambda.sh
-│   └── upload_ui.sh
+│   ├── deploy.sh                # Full AWS deployment
+│   ├── update_lambda.sh         # Update Lambda code only
+│   ├── cleanup.sh               # Delete all AWS resources
+│   └── index_recipes.py         # Recipe indexing (Titan V2)
 ├── src/
 │   ├── app.py                    # Main Flask application
 │   ├── lambda_function.py        # Lambda handler for AWS
@@ -131,7 +130,7 @@ awsgenaihackathon/
 ├── sessions/                     # Local user session data (gitignored)
 ├── uploads/                      # Local uploaded files (gitignored)
 ├── .gitignore
-├── DEPLOYMENT.md                # AWS deployment guide
+├── AWS_DEPLOY.md                # AWS deployment guide
 ├── FEATURES.md                  # Feature documentation
 ├── Makefile                     # Build commands
 ├── README.md                    # Main documentation
@@ -286,7 +285,7 @@ python test_daily_features.py
 
 ### AWS Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guide including:
+See [AWS_DEPLOY.md](AWS_DEPLOY.md) for comprehensive deployment guide including:
 - Prerequisites and setup
 - Step-by-step deployment
 - Cost optimization

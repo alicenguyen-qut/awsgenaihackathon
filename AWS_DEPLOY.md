@@ -8,7 +8,7 @@ Complete guide to deploy the AI Cooking Assistant to AWS.
 2. **AWS CLI** installed and configured
    ```bash
    aws configure
-   # Enter: Access Key, Secret Key, Region (us-east-1), Output format (json)
+   # Enter: Access Key, Secret Key, Region (ap-southeast-2), Output format (json)
    ```
 3. **Python 3.9+** installed
 4. **Bedrock Model Access** (see below)
@@ -270,21 +270,16 @@ aws s3 cp src/frontend/templates/index.html s3://$RECIPES_BUCKET/ui/index.html
 ## Cleanup (Delete Everything)
 
 ```bash
-# Delete CloudFormation stack
-aws cloudformation delete-stack --stack-name cooking-assistant
-
-# Wait for deletion
-aws cloudformation wait stack-delete-complete --stack-name cooking-assistant
-
-# Manually delete S3 bucket if needed
-export RECIPES_BUCKET=$(aws cloudformation describe-stacks \
-    --stack-name cooking-assistant \
-    --query 'Stacks[0].Outputs[?OutputKey==`RecipesBucket`].OutputValue' \
-    --output text)
-
-aws s3 rm s3://$RECIPES_BUCKET --recursive
-aws s3 rb s3://$RECIPES_BUCKET
+./scripts/cleanup.sh
 ```
+
+This will:
+1. Ask for confirmation
+2. Empty and delete S3 bucket
+3. Delete CloudFormation stack
+4. Verify deletion
+
+**Result:** Zero AWS costs
 
 ## Security Best Practices
 
