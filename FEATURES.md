@@ -93,6 +93,13 @@ DELETE /api/nutrition/logs/<log_id>    - Delete meal log
 GET /api/streaks - Get current & longest streak
 ```
 
+**Interactive Features:**
+- Click on streak display to view detailed modal
+- Motivational messages
+- Achievement badges: 7, 30, 100, 365 days
+- Progress tracking to next milestone
+- Visual achievement system with unlocked badges
+
 ### 3. Smart Daily Recommendations
 
 **Purpose:** AI suggests meals based on today's nutrition gaps

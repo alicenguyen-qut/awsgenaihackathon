@@ -1,4 +1,4 @@
-# AI Cooking Assistant
+# Personal Cooking Assistant
 
 Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) with AWS services.
 
@@ -18,8 +18,9 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 ### 🔥 Daily-Use Features
 - **📊 Daily Nutrition Tracking** - Log meals with calories/macros, see real-time totals
-- **🔥 Habit Streaks** - Gamified daily login streaks to build consistency
+- **🔥 Habit Streaks** - Gamified daily login streaks with achievements and milestones (clickable for details)
 - **💡 Smart Recommendations** - AI suggests meals based on today's nutrition gaps
+- **🏆 Achievement System** - Unlock badges at 7, 30, 100, and 365-day milestones
 
 ### 🤖 Autonomous Agent System
 - **Intent detection** - Understands "plan my week", "generate shopping list"
