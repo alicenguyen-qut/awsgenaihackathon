@@ -394,16 +394,3 @@ http://localhost:5000
 ```bash
 python test_daily_features.py
 ```
-
----
-
-## 📞 Support
-
-For questions or issues:
-- Check README.md for quick start
-- Review DEPLOYMENT.md for AWS setup
-- Modify code directly - it's open source!
-
----
-
-**Built with ❤️ for daily health and wellness**

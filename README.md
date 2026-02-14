@@ -110,19 +110,17 @@ awsgenaihackathon/
 │   ├── lambda_function.py        # Lambda handler for AWS
 │   ├── frontend/
 │   │   └── js/
-│   │       ├── app-init.js       # UI initialization
-│   │       ├── session-manager.js # Authentication & user management
-│   │       ├── chat-manager.js   # Chat operations
-│   │       ├── chat-messages.js  # Message display & sending
-│   │       ├── autonomous-agent.js # AI agent system
-│   │       ├── nutrition-tracker.js # Nutrition logging
-│   │       ├── nutrition-init.js # Nutrition UI initialization
-│   │       ├── meal-features.js  # Favorites, planner, shopping
-│   │       └── files.js          # File upload/management
+│   │       ├── 01-core.js        # Core utilities & initialization
+│   │       ├── 02-auth.js        # Authentication & user management
+│   │       ├── 03-chat.js        # Chat operations & messages
+│   │       ├── 04-nutrition.js   # Nutrition tracking & analytics
+│   │       ├── 05-meals.js       # Favorites, planner, shopping
+│   │       ├── 06-files.js       # File upload/management
+│   │       └── 07-agent.js       # AI autonomous agent
 │   └── templates/
 │       └── index.html            # Main UI template
-├── sessions/                     # User session data (gitignored)
-├── uploads/                      # Uploaded files (gitignored)
+├── sessions/                     # Local user session data (gitignored) - To move to Cloud DB
+├── uploads/                      # Local user ploaded files (gitignored) - To move to Cloud DB
 ├── .gitignore
 ├── DEPLOYMENT.md                 # AWS deployment guide
 ├── FEATURES.md                   # Feature documentation
@@ -343,14 +341,3 @@ Contributions are welcome! Please:
 ## License
 
 MIT License
-
-## Acknowledgments
-
-- AWS Bedrock for AI capabilities
-- Flask for web framework
-- Amazon Titan for embeddings
-- Claude 3 Haiku for conversational AI
-
----
-
-**Built with ❤️ for healthy eating and smart meal planning**

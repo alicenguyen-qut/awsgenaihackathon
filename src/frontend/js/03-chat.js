@@ -1,3 +1,48 @@
+// Chat functionality - list, messages, send/receive
+
+let currentChatId = null;
+
+// Chat list management
+async function createNewChat() {
+    const response = await fetch('/api/chat/new', { method: 'POST' });
+    const data = await response.json();
+    currentChatId = data.chat_id;
+    showWelcomeMessage();
+    await loadSession();
+}
+
+function renderChatList(chats) {
+    const chatList = document.getElementById('chatList');
+    chatList.innerHTML = chats.map(chat => `
+        <div class="chat-item ${chat.id === currentChatId ? 'active' : ''}" onclick="loadChat('${chat.id}')">
+            <div class="chat-item-title">${chat.title}</div>
+            <div class="chat-item-date">${new Date(chat.created_at).toLocaleDateString()}</div>
+            <button class="delete-chat" onclick="event.stopPropagation(); deleteChat('${chat.id}')">×</button>
+        </div>
+    `).join('');
+}
+
+async function loadChat(chatId) {
+    const response = await fetch(`/api/chat/${chatId}`);
+    const chat = await response.json();
+    currentChatId = chatId;
+    
+    const container = document.getElementById('chatContainer');
+    container.innerHTML = '';
+    chat.messages.forEach(msg => addMessage(msg.content, msg.role === 'user'));
+    
+    document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+    document.querySelector(`[onclick="loadChat('${chatId}')"]`)?.classList.add('active');
+}
+
+async function deleteChat(chatId) {
+    if (confirm('Delete this chat?')) {
+        await fetch(`/api/chat/${chatId}`, { method: 'DELETE' });
+        await loadSession();
+    }
+}
+
+// Message handling
 function addMessage(content, isUser) {
     const container = document.getElementById('chatContainer');
     const welcome = container.querySelector('.welcome-message');
@@ -39,11 +84,10 @@ async function sendMessage() {
         const data = await response.json();
         addMessage(data.response, false);
         
-        // Execute autonomous agent actions
         const actions = await executeAgentActions(query, data.response);
         if (actions && actions.length > 0) {
             displayAgentActions(actions);
-            await loadAgentContext(); // Refresh context
+            await loadAgentContext();
         }
     } catch (error) {
         addMessage('Error connecting', false);

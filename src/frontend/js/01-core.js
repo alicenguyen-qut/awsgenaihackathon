@@ -1,4 +1,5 @@
-// UI Initialization
+// Core UI utilities and initialization
+
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('hidden');
 }
@@ -10,7 +11,7 @@ function handleKeyDown(event) {
     }
 }
 
-// Auto-resize textarea
+// Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('userInput');
     if (textarea) {
@@ -20,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Initialize app
     loadSession();
     loadFiles();
 });

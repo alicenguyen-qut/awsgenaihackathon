@@ -1,3 +1,5 @@
+// Data upload management
+
 async function uploadFile() {
     const fileInput = document.getElementById('fileInput');
     const files = fileInput.files;

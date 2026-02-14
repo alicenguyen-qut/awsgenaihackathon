@@ -1,3 +1,5 @@
+// Login 
+
 let currentUsername = '';
 
 async function login() {

@@ -1050,15 +1050,14 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/session-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/chat-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/autonomous-agent.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/chat-messages.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/files.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/app-init.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/meal-features.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/nutrition-tracker.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/nutrition-init.js') }}" type="module"></script>
+    <!-- JavaScript modules - loaded in order -->
+    <script src="{{ url_for('static', filename='js/01-core.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/02-auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/03-chat.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/04-nutrition.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/05-meals.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/06-files.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/07-agent.js') }}"></script>
 </body>
 </html>
 

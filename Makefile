@@ -4,15 +4,15 @@ install:
 	@echo "Installing Python dependencies..."
 	@pip install -r requirements.txt
 
-run:
+runapp:
 	@echo "Running Flask app in LOCAL mode..."
 	@python src/app.py
 
-run-aws:
+runaws:
 	@echo "Running Flask app in AWS mode..."
 	@USE_AWS=true python src/app.py
 
-deploy:
+deployaws:
 	@echo "Deploying to AWS..."
 	@bash scripts/deploy_full.sh
 
@@ -25,7 +25,7 @@ clean:
 help:
 	@echo "Available targets:"
 	@echo "  make install   - Install Python dependencies"
-	@echo "  make run       - Run app locally (no AWS)"
-	@echo "  make run-aws   - Run app with AWS backend"
-	@echo "  make deploy    - Deploy to AWS"
+	@echo "  make runapp    - Run app locally (no AWS)"
+	@echo "  make runaws    - Run app with AWS backend"
+	@echo "  make deployaws - Deploy to AWS"
 	@echo "  make clean     - Clean up cache files"
