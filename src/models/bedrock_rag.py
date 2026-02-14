@@ -58,7 +58,7 @@ class BedrockRAG:
         return [r['recipe'] for r in results[:top_k]]
     
     def generate_response(self, query: str, context: str, user_profile: Dict = None) -> str:
-        """Generate response using Claude 3 Haiku with RAG context"""
+        """Generate response using LLM with RAG context"""
         try:
             # Build system prompt with user profile
             system_prompt = "You are a helpful cooking assistant. Provide personalized recipe recommendations and nutrition advice."

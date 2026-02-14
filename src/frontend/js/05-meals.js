@@ -27,7 +27,7 @@ async function loadFavorites() {
                     <div style="font-weight: 500; color: #2d3748; margin-bottom: 8px;">${f.recipeName}</div>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="viewFavoriteRecipe('${f.recipeId}', '${f.recipeName.replace(/'/g, "\\'") }', \`${(f.content || '').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" style="flex: 1; background: #74b9ff; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">📖 View</button>
-                        <button onclick="toggleFavorite('${f.recipeId}', '${f.recipeName}')" style="background: #fab1a0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ Remove</button>
+                        <button onclick="toggleFavorite('${f.recipeId}', '${f.recipeName.replace(/'/g, "\\'")}')" style="background: #fab1a0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ Remove</button>
                     </div>
                 </div>`
             ).join('');

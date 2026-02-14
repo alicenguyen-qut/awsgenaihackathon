@@ -5,7 +5,7 @@ install:
 	@uv pip install -r requirements.txt
 
 run:
-	@echo "Running Flask app (mode set in .env)..."
+	@echo "Running app..."
 	@python src/app.py
 
 deploy:
@@ -22,7 +22,7 @@ help:
 	@echo "Personal Cooking Assistant - Available Commands:"
 	@echo ""
 	@echo "  make install   - Install Python dependencies"
-	@echo "  make run       - Run app (USE_AWS set in .env file)"
+	@echo "  make run       - Run app"
 	@echo "  make deploy    - Deploy to AWS (full stack)"
 	@echo "  make clean     - Clean up cache files"
 	@echo "  make help      - Show this help message"
