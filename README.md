@@ -65,15 +65,23 @@ User → Flask UI → Elastic Beanstalk → Bedrock (Claude + Titan)
 
 ### Installation
 
-# Install dependencies
-```
+```bash
 make install
 ```
 
-### Running Locally (No AWS Required)
+### Running Locally
 
+**Option 1: Without AWS (Mock Mode)**
 ```bash
-make run
+make run-local
+# No AWS credentials needed - uses mock data responses
+# Visit http://localhost:5000
+```
+
+**Option 2: With AWS Bedrock + S3**
+```bash
+make run-aws
+# Requires: AWS CLI configured with Bedrock access + S3 deployed with embeddings (Please see Deploy to AWS)
 # Visit http://localhost:5000
 ```
 
