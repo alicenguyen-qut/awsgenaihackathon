@@ -9,30 +9,43 @@ echo ""
 
 # Configuration
 REGION="ap-southeast-2"
-STACK_NAME="cooking-assistant-stack"
+STACK_NAMES=("cooking-assistant-ec2-stack" "cooking-assistant-stack")
 
 echo "Checking existing resources..."
 
-# Check if stack exists
-STACK_EXISTS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGION 2>/dev/null && echo "true" || echo "false")
+# Find which stack exists
+STACK_NAME=""
+for name in "${STACK_NAMES[@]}"; do
+    if aws cloudformation describe-stacks --stack-name "$name" --region $REGION &>/dev/null; then
+        STACK_NAME="$name"
+        echo "✅ Found stack: $STACK_NAME"
+        break
+    fi
+done
 
-if [ "$STACK_EXISTS" = "false" ]; then
-    echo "❌ No CloudFormation stack found: $STACK_NAME"
+if [ -z "$STACK_NAME" ]; then
+    echo "❌ No CloudFormation stack found"
     echo ""
     echo "Checking for orphaned resources..."
     
     # Check for S3 buckets
-    BUCKETS=$(aws s3 ls | grep "cooking-assistant-data" | awk '{print $3}' || echo "")
+    BUCKETS=$(aws s3 ls | grep -E "cooking-assistant-data|app-data-bucket" | awk '{print $3}' || echo "")
     if [ -n "$BUCKETS" ]; then
         echo "Found S3 buckets:"
         echo "$BUCKETS"
-    else
+    fi
+    
+    # Check for EC2 instances
+    INSTANCES=$(aws ec2 describe-instances --region $REGION --filters "Name=tag:Name,Values=CookingAssistant" "Name=instance-state-name,Values=running,stopped" --query 'Reservations[*].Instances[*].InstanceId' --output text)
+    if [ -n "$INSTANCES" ]; then
+        echo "Found EC2 instances: $INSTANCES"
+    fi
+    
+    if [ -z "$BUCKETS" ] && [ -z "$INSTANCES" ]; then
         echo "No resources found to clean up."
         exit 0
     fi
 else
-    echo "✅ Found stack: $STACK_NAME"
-    
     # Get S3 bucket name from stack
     S3_BUCKET=$(aws cloudformation describe-stacks \
       --stack-name $STACK_NAME \
@@ -65,7 +78,7 @@ if [ -n "$S3_BUCKET" ]; then
 fi
 
 # Delete CloudFormation stack
-if [ "$STACK_EXISTS" = "true" ]; then
+if [ -n "$STACK_NAME" ]; then
     echo "Deleting CloudFormation stack: $STACK_NAME"
     aws cloudformation delete-stack --stack-name $STACK_NAME --region $REGION
     
@@ -78,7 +91,7 @@ fi
 
 # Clean up orphaned S3 buckets (if any)
 echo "Checking for orphaned S3 buckets..."
-ORPHANED_BUCKETS=$(aws s3 ls | grep "cooking-assistant-data" | awk '{print $3}' || echo "")
+ORPHANED_BUCKETS=$(aws s3 ls | grep -E "cooking-assistant-data|app-data-bucket" | awk '{print $3}' || echo "")
 if [ -n "$ORPHANED_BUCKETS" ]; then
     echo "Found orphaned buckets:"
     for BUCKET in $ORPHANED_BUCKETS; do
@@ -88,6 +101,18 @@ if [ -n "$ORPHANED_BUCKETS" ]; then
     done
 else
     echo "✅ No orphaned S3 buckets found"
+fi
+echo ""
+
+# Terminate orphaned EC2 instances
+echo "Checking for orphaned EC2 instances..."
+ORPHANED_INSTANCES=$(aws ec2 describe-instances --region $REGION --filters "Name=tag:Name,Values=CookingAssistant" "Name=instance-state-name,Values=running,stopped" --query 'Reservations[*].Instances[*].InstanceId' --output text)
+if [ -n "$ORPHANED_INSTANCES" ]; then
+    echo "Found orphaned instances: $ORPHANED_INSTANCES"
+    aws ec2 terminate-instances --instance-ids $ORPHANED_INSTANCES --region $REGION
+    echo "✅ Instances terminated"
+else
+    echo "✅ No orphaned instances found"
 fi
 echo ""
 
