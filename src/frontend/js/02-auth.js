@@ -84,6 +84,26 @@ async function uploadProfilePhoto() {
     }
 }
 
+async function deleteProfilePhoto() {
+    showConfirm('Are you sure you want to delete your profile photo?', async () => {
+        try {
+            const response = await fetch('/api/profile-photo', {method: 'DELETE'});
+            const data = await response.json();
+            
+            if (data.success) {
+                const avatar = document.getElementById('userAvatar');
+                avatar.innerHTML = currentUsername.charAt(0).toUpperCase();
+                showAlert('Profile photo deleted!', 'success');
+            } else {
+                showAlert(data.error || 'Failed to delete photo', 'error');
+            }
+        } catch (error) {
+            console.error('Delete photo error:', error);
+            showAlert('Failed to delete photo', 'error');
+        }
+    });
+}
+
 async function loadProfilePhoto() {
     try {
         const response = await fetch('/api/profile-photo');

@@ -171,6 +171,27 @@ def upload_profile_photo():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/profile-photo', methods=['DELETE'])
+def delete_profile_photo():
+    try:
+        user_id = get_user_session()
+        user_data = load_user_data(user_id)
+        
+        # Delete photo file if exists
+        if 'profile_photo' in user_data and user_data['profile_photo']:
+            filename = user_data['profile_photo'].replace('/uploads/', '')
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        
+        user_data['profile_photo'] = ''
+        save_user_data(user_id, user_data)
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Profile photo delete error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/profile-photo', methods=['GET'])
 def get_profile_photo():
     try:

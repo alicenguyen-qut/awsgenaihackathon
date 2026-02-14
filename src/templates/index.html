@@ -954,6 +954,7 @@
                 <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">Upload your profile picture</p>
                 <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" onchange="uploadProfilePhoto()">
                 <button class="settings-btn" onclick="document.getElementById('profilePhotoInput').click()">Choose Photo</button>
+                <button class="settings-btn" onclick="deleteProfilePhoto()" style="margin-top: 8px;">Delete Photo</button>
             </div>
             
             <div class="settings-section">
@@ -1006,13 +1007,13 @@
             <div class="settings-section">
                 <h3>🗑️ Clear Chat History</h3>
                 <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">This will permanently delete all your chat conversations.</p>
-                <button class="settings-btn danger" onclick="clearChatHistory()">Clear All Chats</button>
+                <button class="settings-btn" onclick="clearChatHistory()">Clear All Chats</button>
             </div>
             
             <div class="settings-section">
                 <h3>📁 Clear Uploaded Files</h3>
                 <p style="font-size: 13px; color: #718096; margin-bottom: 12px;">Remove all uploaded documents from your account.</p>
-                <button class="settings-btn danger" onclick="clearUploadedFiles()">Clear All Files</button>
+                <button class="settings-btn" onclick="clearUploadedFiles()">Clear All Files</button>
             </div>
         </div>
     </div>
@@ -1056,7 +1057,7 @@
                 <button onclick="addShoppingItem()" style="padding: 10px 20px; background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%); color: #8b6f8f; border: none; border-radius: 10px; cursor: pointer; margin-left: 8px; font-weight: 600;">Add</button>
             </div>
             <div id="shoppingItems" style="max-height: 400px; overflow-y: auto; margin-bottom: 16px;"></div>
-            <button class="settings-btn danger" onclick="clearShoppingList()">Clear All</button>
+            <button class="settings-btn" onclick="clearShoppingList()">Clear All</button>
         </div>
     </div>
 
