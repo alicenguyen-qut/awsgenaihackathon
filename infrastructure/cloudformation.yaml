@@ -7,14 +7,6 @@ Parameters:
     Description: S3 bucket name for recipes and user data storage
 
 Resources:
-  # EC2 Key Pair
-  CookingAssistantKeyPair:
-    Type: AWS::EC2::KeyPair
-    Properties:
-      KeyName: cooking-assistant-key
-      KeyType: rsa
-      KeyFormat: pem
-
   # S3 Bucket for recipes and user data
   DataBucket:
     Type: AWS::S3::Bucket
@@ -102,7 +94,6 @@ Resources:
     Properties:
       ImageId: ami-001f2488b35ca8aad  # Ubuntu 22.04 LTS (ap-southeast-2)
       InstanceType: t3.micro
-      KeyName: !Ref CookingAssistantKeyPair
       SecurityGroupIds:
         - !Ref WebSecurityGroup
       IamInstanceProfile: !Ref EC2InstanceProfile
@@ -206,15 +197,3 @@ Outputs:
     Value: !Ref DataBucket
     Export:
       Name: !Sub '${AWS::StackName}-DataBucket'
-  
-  KeyPairName:
-    Description: EC2 Key Pair name
-    Value: !Ref CookingAssistantKeyPair
-    Export:
-      Name: !Sub '${AWS::StackName}-KeyPair'
-  
-  SSHCommand:
-    Description: SSH command to connect to instance
-    Value: !Sub 'ssh -i cooking-assistant-key.pem ubuntu@${WebServer.PublicIp}'
-    Export:
-      Name: !Sub '${AWS::StackName}-SSHCommand'
