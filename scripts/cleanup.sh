@@ -9,7 +9,7 @@ echo ""
 
 # Configuration
 REGION="ap-southeast-2"
-STACK_NAME="cooking-assistant-ec2-stack"
+STACK_NAME="cooking-assistant-stack"
 
 echo "Checking existing resources..."
 

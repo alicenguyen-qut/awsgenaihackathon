@@ -100,7 +100,7 @@ Resources:
   WebServer:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-0310483fb2b488153  # Amazon Linux 2023 (ap-southeast-2)
+      ImageId: ami-001f2488b35ca8aad  # Ubuntu 22.04 LTS (ap-southeast-2)
       InstanceType: t3.micro
       KeyName: !Ref CookingAssistantKeyPair
       SecurityGroupIds:
@@ -109,12 +109,12 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          yum update -y
-          yum install -y python3 python3-pip git nginx
+          apt-get update -y
+          apt-get install -y python3 python3-pip git nginx
           
           # Clone repository
-          cd /home/ec2-user
-          git clone https://github.com/your-username/awsgenaihackathon.git
+          cd /home/ubuntu
+          git clone https://github.com/alicenguyen-qut/awsgenaihackathon.git
           cd awsgenaihackathon
           
           # Install Python dependencies
@@ -141,8 +141,8 @@ Resources:
           
           [Service]
           Type=simple
-          User=ec2-user
-          WorkingDirectory=/home/ec2-user/awsgenaihackathon
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/awsgenaihackathon
           Environment=USE_AWS=true
           Environment=AWS_REGION=${AWS::Region}
           Environment=RECIPES_BUCKET=${S3BucketName}
@@ -155,7 +155,7 @@ Resources:
           EOF
           
           # Configure nginx
-          cat > /etc/nginx/conf.d/cooking-assistant.conf << EOF
+          cat > /etc/nginx/sites-available/cooking-assistant << EOF
           server {
               listen 80;
               server_name _;
@@ -170,11 +170,13 @@ Resources:
           }
           EOF
           
+          ln -s /etc/nginx/sites-available/cooking-assistant /etc/nginx/sites-enabled/
+          rm -f /etc/nginx/sites-enabled/default
+          
           # Start services
           systemctl enable cooking-assistant
           systemctl start cooking-assistant
-          systemctl enable nginx
-          systemctl start nginx
+          systemctl restart nginx
 
       Tags:
         - Key: Name
@@ -213,6 +215,6 @@ Outputs:
   
   SSHCommand:
     Description: SSH command to connect to instance
-    Value: !Sub 'ssh -i cooking-assistant-key.pem ec2-user@${WebServer.PublicIp}'
+    Value: !Sub 'ssh -i cooking-assistant-key.pem ubuntu@${WebServer.PublicIp}'
     Export:
       Name: !Sub '${AWS::StackName}-SSHCommand'

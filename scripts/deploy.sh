@@ -9,8 +9,8 @@ echo ""
 
 # Configuration
 REGION="ap-southeast-2"
-STACK_NAME="cooking-assistant-ec2-stack"
-BUCKET_NAME="cooking-assistant-data-$(date +%s)"
+STACK_NAME="cooking-assistant-stack"
+BUCKET_NAME="app-data-bucket"
 
 echo "Region: $REGION"
 echo "Stack: $STACK_NAME"
