@@ -205,10 +205,11 @@ make help
 - `GET /api/nutrition-profile` - Get nutrition profile
 - `POST /api/profile-photo` - Upload profile photo
 - `GET /api/profile-photo` - Get profile photo URL
+- `DELETE /api/profile-photo` - Delete profile photo
 - `POST /api/change-password` - Change password
 
 ### File Management
-- `POST /upload` - Upload file (.txt or .docx)
+- `POST /upload` - Upload file (.txt, .docx, or .pdf)
 - `GET /api/files` - List uploaded files
 - `GET /api/files/<id>` - Get file content
 - `DELETE /api/files/<id>` - Delete file
@@ -242,7 +243,7 @@ See [FEATURES.md](FEATURES.md) for detailed API documentation with examples.
    - Open Meal Planner
    - Add meals to weekly plan
    - Open Shopping List
-   - Upload files (.txt or .docx)
+   - Upload files (.txt, .docx, or .pdf)
    - Update profile settings
 
 ### Automated Testing
