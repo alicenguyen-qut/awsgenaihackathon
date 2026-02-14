@@ -3,7 +3,7 @@
 set -e
 
 echo "==========================================="
-echo "  EC2 Deployment (Cost Optimized)"
+echo "  Personal Cooking Assistant - AWS Deployment"
 echo "==========================================="
 echo ""
 
