@@ -5,7 +5,6 @@ Parameters:
   S3BucketName:
     Type: String
     Description: S3 bucket name for recipes and user data storage
-    Default: !Sub 'cooking-assistant-data-${AWS::AccountId}'
 
 Resources:
   # EC2 Key Pair

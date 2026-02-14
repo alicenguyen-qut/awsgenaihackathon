@@ -18,11 +18,16 @@ User → EC2 (Flask App) → Amazon Bedrock (Claude + Titan)
 bash scripts/deploy.sh
 ```
 
-Deploys:
-- EC2 t3.micro instance (~$8.76/month)
-- S3 bucket (~$1-3/month)
-- Security groups, IAM roles, key pair
-- Indexes recipes to S3
+**CloudFormation deploys:**
+- EC2 t3.micro instance with Flask app
+- S3 bucket for all data storage
+- Security Group (HTTP, HTTPS, SSH)
+- IAM Role (S3 + Bedrock permissions)
+- EC2 Key Pair for SSH access
+
+**Script also:**
+- Indexes recipes to S3 from local machine
+- EC2 auto-indexes on startup
 
 Access: `http://<public-ip>` (shown after deployment)
 
