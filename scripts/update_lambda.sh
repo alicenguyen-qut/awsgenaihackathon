@@ -26,6 +26,11 @@ cp lambda_function.py package/
 cp -r models package/
 cp -r utils package/
 
+# Remove conflicting files
+find package -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
+find package -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+find package -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
 echo "🗜️  Creating zip..."
 cd package
 zip -q -r ../lambda.zip .
