@@ -88,6 +88,14 @@ async function sendMessage() {
         const data = await response.json();
         addMessage(data.response, false);
         
+        // Display agent tool calls if any
+        if (data.tool_calls && data.tool_calls.length > 0) {
+            displayToolCalls(data.tool_calls);
+            // Reload context after agent actions
+            await loadAgentContext();
+        }
+        
+        // Legacy agent actions (for local mode)
         const actions = await executeAgentActions(query, data.response);
         if (actions && actions.length > 0) {
             displayAgentActions(actions);
@@ -99,6 +107,45 @@ async function sendMessage() {
         sendBtn.disabled = false;
         loading.classList.remove('active');
     }
+}
+
+function displayToolCalls(toolCalls) {
+    const container = document.getElementById('chatContainer');
+    const actionsDiv = document.createElement('div');
+    actionsDiv.style.cssText = 'margin: 20px 0; padding: 16px; background: linear-gradient(135deg, rgba(195, 240, 202, 0.2), rgba(116, 185, 255, 0.1)); border-left: 4px solid #74b9ff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);';
+    
+    const toolIcons = {
+        'search_recipes': '🔍',
+        'add_to_favorites': '⭐',
+        'add_to_meal_plan': '📅',
+        'add_to_shopping_list': '🛒',
+        'log_nutrition': '📊',
+        'get_nutrition_stats': '📈'
+    };
+    
+    actionsDiv.innerHTML = `
+        <div style="font-weight: 700; color: #2d3748; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🤖</span>
+            <span>Agent Actions Completed</span>
+        </div>
+        ${toolCalls.map(call => {
+            const icon = toolIcons[call.tool] || '🔧';
+            const result = call.result || {};
+            const message = result.message || JSON.stringify(result);
+            return `
+                <div style="font-size: 14px; color: #4a5568; margin: 8px 0; padding: 10px; background: white; border-radius: 8px; display: flex; align-items: start; gap: 10px;">
+                    <span style="font-size: 18px;">${icon}</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 4px;">${call.tool.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+                        <div style="color: #718096;">${message}</div>
+                    </div>
+                </div>
+            `;
+        }).join('')}
+    `;
+    
+    container.appendChild(actionsDiv);
+    container.scrollTop = container.scrollHeight;
 }
 
 function sendSuggestion(text) {

@@ -24,8 +24,10 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 ### 🤖 Autonomous Agent System
 - **Intent detection** - Understands "plan my week", "generate shopping list"
-- **Multi-step execution** - Chains actions automatically
+- **Multi-step execution** - Chains actions automatically 
 - **Proactive suggestions** - Time-based meal recommendations
+- **Tool use capabilities** - Autonomously searches recipes, adds favorites, plans meals, generates shopping lists, and logs nutrition
+- **Transparent actions** - All agent actions are displayed with visual feedback
 
 ### 🍳 Core Features
 - AI-powered chat with RAG
@@ -40,7 +42,7 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 - **Frontend:** Flask + HTML/CSS + JavaScript
 - **Backend:** Python (Flask)
-- **LLM:** Amazon Bedrock (Claude 3.5 Sonnet - agentic with tool use)
+- **LLM:** Amazon Bedrock 
 - **Embeddings:** Amazon Titan Embeddings
 - **Vector Storage:** S3 + NumPy cosine similarity
 - **Infrastructure:** CloudFormation

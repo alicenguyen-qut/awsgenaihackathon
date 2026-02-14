@@ -402,21 +402,116 @@ def chat():
     
     # Generate response
     if USE_AWS and bedrock_rag:
-        # AWS Mode: Use Bedrock RAG
+        # AWS Mode: Use Bedrock RAG with agentic capabilities
         try:
             user_profile = user_data.get('nutrition_profile', {})
-            response = bedrock_rag.chat_with_rag(query, MOCK_RECIPES, user_profile)
+            
+            # Define tool handler for agent
+            def tool_handler(tool_name: str, tool_input: dict) -> dict:
+                """Handle tool calls from the agent"""
+                try:
+                    if tool_name == "search_recipes":
+                        query = tool_input.get('query', '')
+                        top_k = tool_input.get('top_k', 3)
+                        results = bedrock_rag.search_recipes(query, MOCK_RECIPES, top_k)
+                        return {"success": True, "recipes": [r.get('name', '') for r in results]}
+                    
+                    elif tool_name == "add_to_favorites":
+                        recipe_name = tool_input.get('recipe_name', '')
+                        recipe_content = tool_input.get('recipe_content', '')
+                        recipe_id = str(uuid.uuid4())
+                        
+                        if 'favorites' not in user_data:
+                            user_data['favorites'] = []
+                        
+                        user_data['favorites'].append({
+                            'recipeId': recipe_id,
+                            'recipeName': recipe_name,
+                            'content': recipe_content
+                        })
+                        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
+                        return {"success": True, "message": f"Added '{recipe_name}' to favorites"}
+                    
+                    elif tool_name == "add_to_meal_plan":
+                        day = tool_input.get('day', '')
+                        meal_name = tool_input.get('meal_name', '')
+                        
+                        if 'meal_plan' not in user_data:
+                            user_data['meal_plan'] = {}
+                        
+                        user_data['meal_plan'][day] = meal_name
+                        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
+                        return {"success": True, "message": f"Added '{meal_name}' to {day}"}
+                    
+                    elif tool_name == "add_to_shopping_list":
+                        items = tool_input.get('items', [])
+                        
+                        if 'shopping_list' not in user_data:
+                            user_data['shopping_list'] = []
+                        
+                        for item in items:
+                            user_data['shopping_list'].append({'name': item, 'checked': False})
+                        
+                        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
+                        return {"success": True, "message": f"Added {len(items)} items to shopping list"}
+                    
+                    elif tool_name == "log_nutrition":
+                        if 'nutrition_logs' not in user_data:
+                            user_data['nutrition_logs'] = []
+                        
+                        log = {
+                            'id': str(uuid.uuid4()),
+                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            'meal_type': tool_input.get('meal_type', 'snack'),
+                            'name': tool_input.get('name', ''),
+                            'calories': tool_input.get('calories', 0),
+                            'protein': tool_input.get('protein', 0),
+                            'carbs': tool_input.get('carbs', 0),
+                            'fats': tool_input.get('fats', 0),
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        user_data['nutrition_logs'].append(log)
+                        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
+                        return {"success": True, "message": f"Logged {log['name']} ({log['calories']} cal)"}
+                    
+                    elif tool_name == "get_nutrition_stats":
+                        today = datetime.now().strftime('%Y-%m-%d')
+                        stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today)
+                        return {"success": True, "stats": stats}
+                    
+                    else:
+                        return {"success": False, "error": f"Unknown tool: {tool_name}"}
+                        
+                except Exception as e:
+                    print(f"Tool handler error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return {"success": False, "error": str(e)}
+            
+            result = bedrock_rag.chat_with_rag(query, MOCK_RECIPES, user_profile, tool_handler)
+            response = result.get('response', '')
+            tool_calls = result.get('tool_calls', [])
+            
         except Exception as e:
             print(f"Bedrock error: {e}")
+            import traceback
+            traceback.print_exc()
             response = "I apologize, but I'm having trouble connecting to the AI service. Please try again."
+            tool_calls = []
     else:
         # Local Mode: Mock responses
         response = get_mock_chat_response(query)
+        tool_calls = []
     
     # Save messages to chat history
     if current_chat:
         current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': datetime.now().isoformat()})
-        current_chat['messages'].append({'role': 'assistant', 'content': response, 'timestamp': datetime.now().isoformat()})
+        current_chat['messages'].append({
+            'role': 'assistant', 
+            'content': response, 
+            'timestamp': datetime.now().isoformat(),
+            'tool_calls': tool_calls
+        })
         
         # Update title if it's the first message
         if len(current_chat['messages']) == 2:
@@ -424,7 +519,7 @@ def chat():
         
         save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
     
-    return jsonify({'response': response})
+    return jsonify({'response': response, 'tool_calls': tool_calls})
 
 @app.route('/api/favorites', methods=['POST'])
 def toggle_favorite():

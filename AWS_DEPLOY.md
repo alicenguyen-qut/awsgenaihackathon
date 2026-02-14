@@ -76,7 +76,7 @@ User Browser
 API Gateway (HTTPS)
     ↓
 Lambda Function (Python 3.11)
-    ├── Bedrock (Claude 3.5 Sonnet) - Agentic chat with tool use
+    ├── Bedrock (Claude) - Agentic chat with tool use
     ├── Bedrock (Titan V2) - Embeddings
     └── S3 Bucket
         ├── users/ - User data (JSON)
@@ -198,44 +198,6 @@ aws s3 ls s3://$RECIPES_BUCKET/users/
 | **Total** | | **~$11.45/month** |
 
 **Cost Savings vs OpenSearch:** ~$700/month (90%+ reduction)
-
-## Troubleshooting
-
-### Issue: "Access Denied" for Bedrock
-
-**Solution:** Enable model access in Bedrock console:
-1. Go to AWS Console → Bedrock → Model access
-2. Enable Claude 3.5 Sonnet and Titan Embeddings V2
-
-### Issue: Lambda timeout
-
-**Solution:** Increase timeout in CloudFormation:
-```yaml
-Timeout: 60  # Increase to 120 if needed
-```
-
-### Issue: "Module not found" in Lambda
-
-**Solution:** Redeploy Lambda with dependencies:
-```bash
-./scripts/update_lambda.sh
-```
-
-### Issue: CORS errors
-
-**Solution:** CloudFormation already configures CORS. Check browser console for specific error.
-
-### Issue: UI not loading
-
-**Solution:** Check S3 upload:
-```bash
-aws s3 ls s3://$RECIPES_BUCKET/ui/
-```
-
-If empty, re-upload:
-```bash
-aws s3 cp src/frontend/templates/index.html s3://$RECIPES_BUCKET/ui/index.html
-```
 
 ## Cleanup (Delete Everything)
 
