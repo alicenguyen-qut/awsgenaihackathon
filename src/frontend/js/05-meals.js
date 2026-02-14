@@ -8,7 +8,7 @@ async function toggleFavorite(recipeId, recipeName) {
         });
         const data = await response.json();
         if (data.success) {
-            alert(data.added ? 'Added to favorites!' : 'Removed from favorites!');
+            showAlert(data.added ? 'Added to favorites!' : 'Removed from favorites!', data.added ? 'success' : 'info');
             loadFavorites();
         }
     } catch (error) {
@@ -43,7 +43,7 @@ async function loadFavorites() {
 function addLastRecipeToFavorites() {
     const messages = document.querySelectorAll('.message.bot');
     if (messages.length === 0) {
-        alert('No recipes found. Ask for a recipe first!');
+        showAlert('No recipes found. Ask for a recipe first!', 'warning');
         return;
     }
     
@@ -71,7 +71,7 @@ function addLastRecipeToFavorites() {
         // Store full content with the favorite
         saveFavoriteWithContent(recipeId, recipeName, content);
     } else {
-        alert('Could not extract recipe name. Try asking for a specific recipe!');
+        showAlert('Could not extract recipe name. Try asking for a specific recipe!', 'warning');
     }
 }
 
@@ -84,11 +84,12 @@ async function saveFavoriteWithContent(recipeId, recipeName, content) {
         });
         const data = await response.json();
         if (data.success) {
-            alert('Added to favorites!');
+            showAlert('Added to favorites!', 'success');
             loadFavorites();
         }
     } catch (error) {
         console.error('Save favorite error:', error);
+        showAlert('Failed to save favorite', 'error');
     }
 }
 

@@ -137,12 +137,12 @@ window.submitMealLog = async () => {
         fats: parseInt(document.getElementById('meal-fats').value) || 0
     };
     
-    if (!data.name.trim()) return alert('Please enter a meal name');
+    if (!data.name.trim()) return showAlert('Please enter a meal name', 'warning');
     
     await logMeal(data);
     document.querySelector('.modal').remove();
     await updateDashboard();
-    alert('Meal logged successfully!');
+    showAlert('Meal logged successfully!', 'success');
 };
 
 window.deleteMealLog = async (logId) => {

@@ -5,7 +5,7 @@ async function login() {
     const password = document.getElementById('passwordInput').value.trim();
     
     if (!username || !password) {
-        alert('Please enter username and password');
+        showAlert('Please enter username and password', 'warning');
         return;
     }
     
@@ -25,16 +25,16 @@ async function login() {
             document.getElementById('loginModal').classList.add('hidden');
             await loadSession();
         } else {
-            alert(data.error || 'Login failed');
+            showAlert(data.error || 'Login failed', 'error');
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert('Login failed. Please try again.');
+        showAlert('Login failed. Please try again.', 'error');
     }
 }
 
 async function logout() {
-    if (confirm('Are you sure you want to logout?')) {
+    showConfirm('Are you sure you want to logout?', async () => {
         try {
             await fetch('/api/logout', {method: 'POST'});
             location.reload();
@@ -42,7 +42,7 @@ async function logout() {
             console.error('Logout error:', error);
             location.reload();
         }
-    }
+    });
 }
 
 function toggleUserMenu() {
@@ -55,7 +55,7 @@ async function uploadProfilePhoto() {
     const file = input.files[0];
     
     if (!file) {
-        alert('Please select a photo');
+        showAlert('Please select a photo', 'warning');
         return;
     }
     
@@ -73,14 +73,14 @@ async function uploadProfilePhoto() {
         if (data.success) {
             const avatar = document.getElementById('userAvatar');
             avatar.innerHTML = `<img src="${data.photoUrl}?t=${Date.now()}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer;">`;
-            alert('Profile photo updated!');
+            showAlert('Profile photo updated!', 'success');
             input.value = '';
         } else {
-            alert(data.error || 'Failed to upload photo');
+            showAlert(data.error || 'Failed to upload photo', 'error');
         }
     } catch (error) {
         console.error('Upload photo error:', error);
-        alert('Failed to upload photo. Please try again.');
+        showAlert('Failed to upload photo. Please try again.', 'error');
     }
 }
 
@@ -122,13 +122,13 @@ async function saveNutritionProfile() {
         const data = await response.json();
         
         if (data.success) {
-            alert('Nutrition profile saved!');
+            showAlert('Nutrition profile saved!', 'success');
         } else {
-            alert(data.error || 'Failed to save profile');
+            showAlert(data.error || 'Failed to save profile', 'error');
         }
     } catch (error) {
         console.error('Save profile error:', error);
-        alert('Failed to save profile');
+        showAlert('Failed to save profile', 'error');
     }
 }
 
@@ -174,17 +174,17 @@ async function changePassword() {
     const confirmPassword = document.getElementById('confirmPassword').value;
     
     if (!currentPassword || !newPassword || !confirmPassword) {
-        alert('Please fill in all password fields');
+        showAlert('Please fill in all password fields', 'warning');
         return;
     }
     
     if (newPassword !== confirmPassword) {
-        alert('New passwords do not match');
+        showAlert('New passwords do not match', 'warning');
         return;
     }
     
     if (newPassword.length < 6) {
-        alert('Password must be at least 6 characters');
+        showAlert('Password must be at least 6 characters', 'warning');
         return;
     }
     
@@ -198,55 +198,55 @@ async function changePassword() {
         const data = await response.json();
         
         if (data.success) {
-            alert('Password changed successfully!');
+            showAlert('Password changed successfully!', 'success');
             closeSettings();
         } else {
-            alert(data.error || 'Failed to change password');
+            showAlert(data.error || 'Failed to change password', 'error');
         }
     } catch (error) {
         console.error('Change password error:', error);
-        alert('Failed to change password');
+        showAlert('Failed to change password', 'error');
     }
 }
 
 async function clearChatHistory() {
-    if (confirm('Are you sure? This will permanently delete all your chats.')) {
+    showConfirm('Are you sure? This will permanently delete all your chats.', async () => {
         try {
             const response = await fetch('/api/clear-chats', {method: 'POST'});
             const data = await response.json();
             
             if (data.success) {
-                alert('Chat history cleared!');
+                showAlert('Chat history cleared!', 'success');
                 closeSettings();
                 location.reload();
             } else {
-                alert(data.error || 'Failed to clear chats');
+                showAlert(data.error || 'Failed to clear chats', 'error');
             }
         } catch (error) {
             console.error('Clear chats error:', error);
-            alert('Failed to clear chats');
+            showAlert('Failed to clear chats', 'error');
         }
-    }
+    });
 }
 
 async function clearUploadedFiles() {
-    if (confirm('Are you sure? This will permanently delete all your uploaded files.')) {
+    showConfirm('Are you sure? This will permanently delete all your uploaded files.', async () => {
         try {
             const response = await fetch('/api/clear-files', {method: 'POST'});
             const data = await response.json();
             
             if (data.success) {
-                alert('Uploaded files cleared!');
+                showAlert('Uploaded files cleared!', 'success');
                 closeSettings();
                 location.reload();
             } else {
-                alert(data.error || 'Failed to clear files');
+                showAlert(data.error || 'Failed to clear files', 'error');
             }
         } catch (error) {
             console.error('Clear files error:', error);
-            alert('Failed to clear files');
+            showAlert('Failed to clear files', 'error');
         }
-    }
+    });
 }
 
 function handleLoginKeyPress(event) {

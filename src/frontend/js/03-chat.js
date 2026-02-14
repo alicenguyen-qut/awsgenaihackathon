@@ -34,10 +34,11 @@ async function loadChat(chatId) {
 }
 
 async function deleteChat(chatId) {
-    if (confirm('Delete this chat?')) {
+    showConfirm('Delete this chat?', async () => {
         await fetch(`/api/chat/${chatId}`, { method: 'DELETE' });
         await loadSession();
-    }
+        showAlert('Chat deleted!', 'info');
+    });
 }
 
 // Message handling
