@@ -1,36 +1,31 @@
-.PHONY: install install-uv run-local run-aws deploy clean
+.PHONY: install run clean help
 
-install-uv:
-	@echo "Installing uv..."
-	@curl -LsSf https://astral.sh/uv/install.sh | sh
+install:
+	@echo "Installing Python dependencies..."
+	@pip install -r requirements.txt
 
-install-env:
-	@uv venv
-	@echo "Installing Python dependencies with uv..."
-	@uv pip install -e .
-
-run-local:
-	@echo "Running Flask app locally..."
-	@export USE_LOCAL=true && uv run python src/app_local.py
+run:
+	@echo "Running Flask app in LOCAL mode..."
+	@python src/app.py
 
 run-aws:
-	@echo "Running Flask app with AWS backend..."
-	@uv run python src/app.py
+	@echo "Running Flask app in AWS mode..."
+	@USE_AWS=true python src/app.py
 
 deploy:
 	@echo "Deploying to AWS..."
-	@bash scripts/deploy.sh
+	@bash scripts/deploy_full.sh
 
 clean:
 	@echo "Cleaning up..."
-	@rm -rf .venv __pycache__ src/__pycache__ *.pyc
-	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@rm -rf __pycache__ src/__pycache__ *.pyc
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
 help:
 	@echo "Available targets:"
-	@echo "  make install-uv   - Install uv package manager"
-	@echo "  make install      - Install Python dependencies"
-	@echo "  make run-local    - Run app locally (no AWS)"
-	@echo "  make run-aws      - Run app with AWS backend"
-	@echo "  make deploy       - Deploy to AWS"
-	@echo "  make clean        - Clean up cache files"
+	@echo "  make install   - Install Python dependencies"
+	@echo "  make run       - Run app locally (no AWS)"
+	@echo "  make run-aws   - Run app with AWS backend"
+	@echo "  make deploy    - Deploy to AWS"
+	@echo "  make clean     - Clean up cache files"

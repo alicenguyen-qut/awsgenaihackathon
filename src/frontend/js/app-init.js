@@ -1,3 +1,4 @@
+// UI Initialization
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('hidden');
 }
@@ -10,12 +11,16 @@ function handleKeyDown(event) {
 }
 
 // Auto-resize textarea
-const textarea = document.getElementById('userInput');
-textarea.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('userInput');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+    }
+    
+    // Initialize app
+    loadSession();
+    loadFiles();
 });
-
-// Initialize app
-loadSession();
-loadFiles();

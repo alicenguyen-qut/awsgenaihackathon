@@ -16,7 +16,7 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 ## Key Features
 
-### 🔥 Daily-Use Features (Replaces Nutritionist Visits!)
+### 🔥 Daily-Use Features
 - **📊 Daily Nutrition Tracking** - Log meals with calories/macros, see real-time totals
 - **🔥 Habit Streaks** - Gamified daily login streaks to build consistency
 - **💡 Smart Recommendations** - AI suggests meals based on today's nutrition gaps
@@ -47,75 +47,276 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 ## Quick Start
 
-### Local Development (No AWS Required)
+### Prerequisites
+- Python 3.9+
+- pip (Python package manager)
+
+### Installation
+
 ```bash
+# Clone the repository
+git clone <your-repo-url>
+cd awsgenaihackathon
+
 # Install dependencies
 pip install -r requirements.txt
+```
 
-# Run local server
-python src/app_local.py
+### Running Locally (No AWS Required)
+
+```bash
+# Run the app
+python src/app.py
+
+# Or use make
+make run
 
 # Visit http://localhost:5000
 ```
 
-### AWS Deployment
+The app will start in **LOCAL MODE** by default, using mock data and file-based storage.
+
+### Running with AWS
+
+```bash
+# Set environment variable
+export USE_AWS=true
+
+# Run the app
+python src/app.py
+
+# Or use make
+make run-aws
+```
+
 See [DEPLOYMENT.md](DEPLOYMENT.md) for full AWS deployment instructions.
 
 ## Project Structure
 
 ```
+awsgenaihackathon/
 ├── data/                          # Recipe documents (RAG optimized)
+│   ├── nutrition_guidelines.txt
+│   └── recipe_*.txt
 ├── infrastructure/                # CloudFormation templates
-├── scripts/                       # Indexing and deployment scripts
+│   └── cloudformation.yaml
+├── scripts/                       # Deployment scripts
+│   ├── deploy_full.sh
+│   ├── deploy_lambda.sh
+│   ├── index_recipes.py
+│   └── upload_ui.sh
 ├── src/
-│   ├── app_local.py              # Local Flask application
-│   ├── app.py                    # AWS Flask application
-│   ├── lambda_function.py        # Lambda handler
-│   ├── frontend/js/
-│   │   ├── session-manager.js    # Login, logout, profile, settings
-│   │   ├── chat-manager.js       # Chat list, create/delete chats
-│   │   ├── chat-messages.js      # Send/display messages
-│   │   ├── autonomous-agent.js   # AI agent intent detection & actions
-│   │   ├── nutrition-tracker.js  # Meal logging & nutrition stats
-│   │   ├── nutrition-init.js     # Initialize nutrition features
-│   │   ├── meal-features.js      # Favorites, meal planner, shopping list
-│   │   ├── files.js              # File upload/view/delete
-│   │   └── app-init.js           # App startup & UI initialization
+│   ├── app.py                    # Main app
+│   ├── lambda_function.py        # Lambda handler for AWS
+│   ├── frontend/
+│   │   └── js/
+│   │       ├── app-init.js       # UI initialization
+│   │       ├── session-manager.js # Authentication & user management
+│   │       ├── chat-manager.js   # Chat operations
+│   │       ├── chat-messages.js  # Message display & sending
+│   │       ├── autonomous-agent.js # AI agent system
+│   │       ├── nutrition-tracker.js # Nutrition logging
+│   │       ├── nutrition-init.js # Nutrition UI initialization
+│   │       ├── meal-features.js  # Favorites, planner, shopping
+│   │       └── files.js          # File upload/management
 │   └── templates/
 │       └── index.html            # Main UI template
-├── sessions/                     # User session data (local)
-├── uploads/                      # Uploaded files & profile photos
-└── requirements.txt
+├── sessions/                     # User session data (gitignored)
+├── uploads/                      # Uploaded files (gitignored)
+├── .gitignore
+├── DEPLOYMENT.md                 # AWS deployment guide
+├── FEATURES.md                   # Feature documentation
+├── Makefile                      # Build commands
+└── requirements.txt              # Python dependencies
+```
+
+## Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `USE_AWS` | Enable AWS mode | `false` | No |
+| `SECRET_KEY` | Flask secret key | `dev-secret-key-change-in-production` | Production only |
+| `RECIPES_BUCKET` | S3 bucket name | - | AWS mode only |
+
+## Available Commands
+
+```bash
+# Install dependencies
+make install
+
+# Run locally (no AWS)
+make run
+
+# Run with AWS backend
+make run-aws
+
+# Deploy to AWS
+make deploy
+
+# Clean cache files
+make clean
+
+# Show help
+make help
 ```
 
 ## API Endpoints
 
-See [FEATURES.md](FEATURES.md) for complete API documentation.
+### Authentication
+- `POST /api/login` - Login or register user
+- `POST /api/logout` - Logout user
+- `GET /api/session` - Get current session
 
-**Key endpoints:**
-- Authentication: `/api/login`, `/api/logout`, `/api/session`
-- Chat: `/api/chat/new`, `/api/chat/<id>`, `/chat`
-- Daily Tracking: `/api/nutrition/log`, `/api/nutrition/stats`, `/api/streaks`
-- Features: `/api/favorites`, `/api/meal-plan`, `/api/shopping-list`
+### Chat
+- `POST /api/chat/new` - Create new chat
+- `GET /api/chat/<id>` - Get chat by ID
+- `DELETE /api/chat/<id>` - Delete chat
+- `POST /chat` - Send message and get AI response
+
+### Nutrition Tracking
+- `POST /api/nutrition/log` - Log a meal
+- `GET /api/nutrition/logs` - Get today's meal logs
+- `GET /api/nutrition/stats` - Get nutrition statistics
+- `DELETE /api/nutrition/logs/<id>` - Delete meal log
+- `GET /api/streaks` - Get login streaks
+- `GET /api/nutrition/analytics` - Get analytics (today/week/month/year)
+- `GET /api/recommendations/daily` - Get daily meal recommendations
+
+### Meal Features
+- `POST /api/favorites` - Toggle favorite recipe
+- `GET /api/favorites` - Get favorite recipes
+- `GET /api/meal-plan` - Get weekly meal plan
+- `POST /api/meal-plan` - Save meal plan
+- `GET /api/shopping-list` - Get shopping list
+- `POST /api/shopping-list` - Add item to shopping list
+- `POST /api/shopping-list/<index>/toggle` - Toggle item checked
+- `DELETE /api/shopping-list/<index>` - Delete item
+- `POST /api/shopping-list/clear` - Clear all items
+
+### User Profile
+- `POST /api/nutrition-profile` - Save nutrition profile
+- `GET /api/nutrition-profile` - Get nutrition profile
+- `POST /api/profile-photo` - Upload profile photo
+- `GET /api/profile-photo` - Get profile photo URL
+- `POST /api/change-password` - Change password
+
+### File Management
+- `POST /upload` - Upload file (.txt or .docx)
+- `GET /api/files` - List uploaded files
+- `GET /api/files/<id>` - Get file content
+- `DELETE /api/files/<id>` - Delete file
+
+### Settings
+- `POST /api/clear-chats` - Clear all chats
+- `POST /api/clear-files` - Clear all uploaded files
+
+See [FEATURES.md](FEATURES.md) for detailed API documentation with examples.
 
 ## Testing
 
-```bash
-# Run automated tests
-python test_daily_features.py
+### Manual Testing
 
-# Manual testing
-1. Start app: python src/app_local.py
-2. Open: http://localhost:5000
-3. Login with any username/password
-4. Try features: Daily Tracker, Meal Planning, Agent commands
+1. **Start the app:**
+   ```bash
+   python src/app.py
+   ```
+
+2. **Open browser:**
+   ```
+   http://localhost:5000
+   ```
+
+3. **Test features:**
+   - Login with any username/password
+   - Create a new chat
+   - Send messages to AI
+   - Open Daily Tracker (📊 button)
+   - Log meals and check stats
+   - Open Meal Planner
+   - Add meals to weekly plan
+   - Open Shopping List
+   - Upload files (.txt or .docx)
+   - Update profile settings
+
+### Automated Testing
+
+```bash
+# Run refactoring tests
+python test_refactoring.py
+
+# Run feature tests (if available)
+python test_daily_features.py
 ```
 
-## Documentation
+## Development
 
-- **[FEATURES.md](FEATURES.md)** - Complete feature guide
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - AWS deployment instructions
-- **README.md** (this file) - Quick start & overview
+### Local Development Workflow
+
+1. **Make changes** to code
+2. **Restart app** to see changes
+3. **Test manually** in browser
+4. **Commit changes** to git
+
+### Code Organization
+
+- **Backend:** `src/app.py` - All Flask routes and business logic
+- **Frontend JS:** `src/frontend/js/` - Modular JavaScript files
+- **Templates:** `src/templates/` - HTML templates
+- **Styles:** Inline in `index.html` (consider extracting to CSS file)
+
+### Adding New Features
+
+1. **Backend:** Add route in `src/app.py`
+2. **Frontend:** Add function in appropriate JS file
+3. **UI:** Update `src/templates/index.html`
+4. **Test:** Verify locally before deploying
+
+## Deployment
+
+### AWS Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guide including:
+- Prerequisites and setup
+- Step-by-step deployment
+- Cost optimization
+- Monitoring and troubleshooting
+- Security best practices
+
+### Quick Deploy
+
+```bash
+# Deploy everything to AWS
+make deploy
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**App won't start:**
+- Check Python version: `python --version` (need 3.9+)
+- Install dependencies: `pip install -r requirements.txt`
+- Check for port conflicts (port 5000)
+
+**Import errors:**
+- Ensure all dependencies installed: `pip install -r requirements.txt`
+- Check virtual environment activated (if using one)
+
+**Session/upload errors:**
+- Folders created automatically on first run
+- Check write permissions in project directory
+
+**AWS mode not working:**
+- Set environment variable: `export USE_AWS=true`
+- Configure AWS credentials: `aws configure`
+- Check S3 bucket exists and accessible
+
+### Getting Help
+
+1. Check documentation files (README, DEPLOYMENT, FEATURES)
+2. Review error messages in terminal
+3. Check browser console for frontend errors
+4. For AWS issues, check CloudWatch logs
 
 ## Future Enhancements
 
@@ -124,8 +325,32 @@ python test_daily_features.py
 - [ ] Hydration tracking
 - [ ] Weight/measurement trends
 - [ ] Voice input support
-- [ ] Mobile app
+- [ ] Mobile app (React Native)
+- [ ] Social features (share recipes)
+- [ ] Integration with fitness trackers
+- [ ] Meal prep scheduling
+- [ ] Grocery delivery integration
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
 MIT License
+
+## Acknowledgments
+
+- AWS Bedrock for AI capabilities
+- Flask for web framework
+- Amazon Titan for embeddings
+- Claude 3 Haiku for conversational AI
+
+---
+
+**Built with ❤️ for healthy eating and smart meal planning**
