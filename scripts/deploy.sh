@@ -10,7 +10,8 @@ echo ""
 # Configuration
 REGION="ap-southeast-2"
 STACK_NAME="cooking-assistant-stack"
-BUCKET_NAME="app-data-bucket"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+BUCKET_NAME="cooking-assistant-data-${ACCOUNT_ID}"
 
 echo "Region: $REGION"
 echo "Stack: $STACK_NAME"
