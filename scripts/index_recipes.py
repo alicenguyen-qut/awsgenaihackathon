@@ -3,7 +3,7 @@ import boto3
 import os
 
 BUCKET = os.environ.get('RECIPES_BUCKET', 'cooking-assistant-recipes')
-REGION = os.environ.get('AWS_REGION', 'us-east-1')
+REGION = os.environ.get('AWS_REGION', 'ap-southeast-2')
 
 bedrock = boto3.client('bedrock-runtime', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)

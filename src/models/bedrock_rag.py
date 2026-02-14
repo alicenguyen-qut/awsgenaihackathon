@@ -5,8 +5,8 @@ from typing import List, Dict
 
 class BedrockRAG:
     def __init__(self):
-        self.bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
-        self.bedrock = boto3.client('bedrock', region_name='us-east-1')
+        self.bedrock_runtime = boto3.client('bedrock-runtime', region_name='ap-southeast-2')
+        self.bedrock = boto3.client('bedrock', region_name='ap-southeast-2')
         self.s3 = boto3.client('s3')
         self.embeddings_cache = {}
         

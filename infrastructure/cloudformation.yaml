@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'RAG Cooking Assistant Infrastructure - S3 Only'
+Description: 'AI Cooking Assistant - Complete Infrastructure'
 
 Parameters:
   ProjectName:
@@ -57,6 +57,7 @@ Resources:
       Environment:
         Variables:
           RECIPES_BUCKET: !Ref RecipesBucket
+          AWS_REGION: !Ref AWS::Region
       Code:
         ZipFile: |
           def lambda_handler(event, context):
@@ -69,7 +70,7 @@ Resources:
       ProtocolType: HTTP
       CorsConfiguration:
         AllowOrigins: ['*']
-        AllowMethods: [GET, POST, OPTIONS]
+        AllowMethods: [GET, POST, DELETE, OPTIONS]
         AllowHeaders: ['*']
 
   ApiIntegration:
@@ -80,67 +81,12 @@ Resources:
       IntegrationUri: !GetAtt ChatbotLambda.Arn
       PayloadFormatVersion: '2.0'
 
-  ApiRoute:
+  # Catch-all route for all paths
+  ApiRouteCatchAll:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref ApiGateway
-      RouteKey: 'POST /chat'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteRoot:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'GET /'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteLogin:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'POST /api/login'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteSession:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'GET /api/session'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteProfilePhoto:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'POST /api/profile-photo'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteProfilePhotoGet:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'GET /api/profile-photo'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRoutePhoto:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'GET /api/photo/{proxy+}'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteNutritionLog:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'POST /api/nutrition/log'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiRouteNutritionStats:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: 'GET /api/nutrition/stats'
+      RouteKey: '$default'
       Target: !Sub 'integrations/${ApiIntegration}'
 
   ApiStage:
@@ -162,3 +108,5 @@ Outputs:
     Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod'
   RecipesBucket:
     Value: !Ref RecipesBucket
+  LambdaFunction:
+    Value: !Ref ChatbotLambda
