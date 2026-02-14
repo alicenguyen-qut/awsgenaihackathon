@@ -1,5 +1,9 @@
 // Core UI utilities and initialization
 
+// Shared state
+let currentUsername = '';
+let currentChatId = null;
+
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('hidden');
 }
@@ -21,6 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    loadSession();
-    loadFiles();
+    // Initialize after other scripts load
+    setTimeout(() => {
+        if (typeof loadSession === 'function') loadSession();
+        if (typeof loadFiles === 'function') loadFiles();
+    }, 100);
 });

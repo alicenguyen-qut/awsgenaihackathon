@@ -1,7 +1,5 @@
 // Chat functionality - list, messages, send/receive
 
-let currentChatId = null;
-
 // Chat list management
 async function createNewChat() {
     const response = await fetch('/api/chat/new', { method: 'POST' });

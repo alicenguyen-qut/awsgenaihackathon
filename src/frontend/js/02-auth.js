@@ -1,7 +1,5 @@
 // Login 
 
-let currentUsername = '';
-
 async function login() {
     const username = document.getElementById('usernameInput').value.trim();
     const password = document.getElementById('passwordInput').value.trim();
@@ -269,6 +267,16 @@ async function loadSession() {
         } else {
             document.getElementById('loginModal').classList.remove('hidden');
         }
+        
+        // Render chat list
+        if (typeof renderChatList === 'function' && data.chats) {
+            renderChatList(data.chats);
+        }
+        
+        // Load current chat if exists
+        if (data.current_chat && typeof loadChat === 'function') {
+            loadChat(data.current_chat);
+        }
     } catch (error) {
         console.error('Load session error:', error);
         document.getElementById('loginModal').classList.remove('hidden');
@@ -278,8 +286,7 @@ async function loadSession() {
 // Add click handler to avatar on page load
 document.addEventListener('DOMContentLoaded', () => {
     const avatar = document.getElementById('userAvatar');
-    avatar.addEventListener('click', toggleUserMenu);
-    loadSession();
+    if (avatar) avatar.addEventListener('click', toggleUserMenu);
 });
 
 // Close menu when clicking outside

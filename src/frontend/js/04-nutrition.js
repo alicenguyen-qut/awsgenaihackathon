@@ -177,3 +177,20 @@ window.openDailyTracker = async () => {
 window.closeDailyTracker = () => {
     document.getElementById('dailyTrackerModal').classList.add('hidden');
 };
+
+// Initialize streaks on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const streaksData = await getStreaks();
+        const streaksEl = document.getElementById('streaks-display');
+        if (streaksEl && streaksData.streaks) {
+            streaksEl.innerHTML = `
+                <div style="font-size: 13px; font-weight: 600; color: #8b6f8f; margin-bottom: 8px;">🔥 Daily Streak</div>
+                <div style="font-size: 36px; font-weight: 700; color: #2d3748; line-height: 1; margin: 4px 0;">${streaksData.streaks.current} days</div>
+                <div style="font-size: 13px; color: #8b6f8f; font-weight: 500;">Best: ${streaksData.streaks.longest} days</div>
+            `;
+        }
+    } catch (e) {
+        console.log('Streaks not loaded yet');
+    }
+});
