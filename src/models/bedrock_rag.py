@@ -4,6 +4,7 @@ import numpy as np
 import time
 from typing import List, Dict, Any, Optional
 
+
 class BedrockRAG:
     def __init__(self, recipes_bucket=None):
         self.bedrock_runtime = boto3.client('bedrock-runtime', region_name='ap-southeast-2')
@@ -125,16 +126,16 @@ class BedrockRAG:
             # Build system prompt
             system_prompt = """You are an autonomous AI cooking assistant with the ability to take actions on behalf of the user.
 
-You can:
-- Search for recipes
-- Add recipes to favorites
-- Plan meals for the week
-- Generate shopping lists
-- Log nutrition information
-- Track daily nutrition stats
+            You can:
+            - Search for recipes
+            - Add recipes to favorites
+            - Plan meals for the week
+            - Generate shopping lists
+            - Log nutrition information
+            - Track daily nutrition stats
 
-When users ask you to do something (like "plan my week" or "add this to favorites"), proactively use the available tools to help them.
-Be conversational and explain what actions you're taking."""
+            When users ask you to do something (like "plan my week" or "add this to favorites"), proactively use the available tools to help them.
+            Be conversational and explain what actions you're taking."""
             
             if user_profile:
                 dietary = user_profile.get('dietary', [])
@@ -150,10 +151,10 @@ Be conversational and explain what actions you're taking."""
             
             # Build user message
             user_message = f"""Recipe Context:
-{context}
+            {context}
 
-User Request: {query}"""
-            
+            User Request: {query}"""
+                        
             messages = [{"role": "user", "content": user_message}]
             tool_results = []
             
