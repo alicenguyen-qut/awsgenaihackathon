@@ -495,7 +495,11 @@ def toggle_favorite():
         if 'favorites' not in user_data:
             user_data['favorites'] = []
         
-        recipe = {'recipeId': data['recipeId'], 'recipeName': data['recipeName']}
+        recipe = {
+            'recipeId': data['recipeId'], 
+            'recipeName': data['recipeName'],
+            'content': data.get('content', '')
+        }
         existing = next((f for f in user_data['favorites'] if f['recipeId'] == recipe['recipeId']), None)
         
         if existing:

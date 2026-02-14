@@ -23,17 +23,92 @@ async function loadFavorites() {
         const list = document.getElementById('favoritesList');
         if (data.favorites && data.favorites.length > 0) {
             list.innerHTML = data.favorites.map(f => 
-                `<div style="padding: 8px; background: rgba(250, 177, 160, 0.1); border-radius: 8px; margin-bottom: 6px;">
-                    ${f.recipeName}
-                    <button onclick="toggleFavorite('${f.recipeId}', '${f.recipeName}')" style="float: right; background: none; border: none; cursor: pointer;">❌</button>
+                `<div style="padding: 12px; background: rgba(250, 177, 160, 0.1); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="font-weight: 500; color: #2d3748; margin-bottom: 8px;">${f.recipeName}</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="viewFavoriteRecipe('${f.recipeId}', '${f.recipeName.replace(/'/g, "\\'") }', \`${(f.content || '').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" style="flex: 1; background: #74b9ff; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">📖 View</button>
+                        <button onclick="toggleFavorite('${f.recipeId}', '${f.recipeName}')" style="background: #fab1a0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">❌ Remove</button>
+                    </div>
                 </div>`
             ).join('');
         } else {
-            list.innerHTML = '<p style="color: #718096;">No favorites yet</p>';
+            list.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px; font-style: italic;">No favorites yet. Click "Add to Favorites" on any recipe in chat!</p>';
         }
     } catch (error) {
         console.error('Load favorites error:', error);
     }
+}
+
+// Extract recipe from last AI message and add to favorites
+function addLastRecipeToFavorites() {
+    const messages = document.querySelectorAll('.message.bot');
+    if (messages.length === 0) {
+        alert('No recipes found. Ask for a recipe first!');
+        return;
+    }
+    
+    const lastMessage = messages[messages.length - 1];
+    const content = lastMessage.querySelector('.message-content').textContent;
+    
+    // Extract recipe name (first line or bullet point)
+    const lines = content.split('\n');
+    let recipeName = '';
+    
+    for (const line of lines) {
+        const match = line.match(/^[\u2022\-\*\d\.)]?\s*([A-Z][^\-\(\n]{5,50})/);
+        if (match) {
+            recipeName = match[1].trim();
+            break;
+        }
+    }
+    
+    if (!recipeName) {
+        recipeName = lines[0].substring(0, 50).trim();
+    }
+    
+    if (recipeName) {
+        const recipeId = Date.now().toString();
+        // Store full content with the favorite
+        saveFavoriteWithContent(recipeId, recipeName, content);
+    } else {
+        alert('Could not extract recipe name. Try asking for a specific recipe!');
+    }
+}
+
+async function saveFavoriteWithContent(recipeId, recipeName, content) {
+    try {
+        const response = await fetch('/api/favorites', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({recipeId, recipeName, content})
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('Added to favorites!');
+            loadFavorites();
+        }
+    } catch (error) {
+        console.error('Save favorite error:', error);
+    }
+}
+
+function viewFavoriteRecipe(recipeId, recipeName, content) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2000;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 32px; border-radius: 24px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid rgba(250, 177, 160, 0.2);">
+                <h2 style="font-size: 24px; font-weight: 700; color: #2d3748;">${recipeName}</h2>
+                <button onclick="this.closest('div').parentElement.remove()" style="background: #fab1a0; color: white; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px;">×</button>
+            </div>
+            <div style="white-space: pre-wrap; font-size: 15px; color: #2d3748; line-height: 1.8;">${content || 'Recipe content not available. Try re-adding this recipe.'}</div>
+            <button onclick="this.closest('div').parentElement.remove()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%); color: #8b6f8f; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px;">Close</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
 
 // Meal Planner
@@ -200,6 +275,16 @@ function openShoppingList() {
 
 function closeShoppingList() {
     document.getElementById('shoppingListModal').classList.add('hidden');
+}
+
+// Favorites modal
+function openFavorites() {
+    document.getElementById('favoritesModal').classList.remove('hidden');
+    loadFavorites();
+}
+
+function closeFavorites() {
+    document.getElementById('favoritesModal').classList.add('hidden');
 }
 
 async function loadShoppingList() {
