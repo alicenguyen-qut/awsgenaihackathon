@@ -289,17 +289,34 @@ function extractIngredientsFromMealPlan(mealPlan) {
         'pasta': ['pasta', 'tomato sauce', 'parmesan'],
         'salad': ['lettuce', 'tomatoes', 'cucumber', 'olive oil'],
         'rice': ['rice', 'vegetables', 'soy sauce'],
-        'soup': ['broth', 'vegetables', 'herbs']
+        'soup': ['broth', 'vegetables', 'herbs'],
+        'beef': ['beef', 'onions', 'garlic'],
+        'pork': ['pork', 'herbs', 'oil'],
+        'fish': ['fish fillet', 'lemon', 'butter'],
+        'egg': ['eggs', 'butter', 'salt'],
+        'tofu': ['tofu', 'soy sauce', 'ginger'],
+        'vegetable': ['mixed vegetables', 'olive oil'],
+        'stir fry': ['vegetables', 'soy sauce', 'garlic', 'ginger'],
+        'curry': ['curry paste', 'coconut milk', 'vegetables'],
+        'taco': ['tortillas', 'meat', 'cheese', 'lettuce', 'salsa'],
+        'pizza': ['pizza dough', 'tomato sauce', 'cheese', 'toppings'],
+        'sandwich': ['bread', 'meat', 'cheese', 'lettuce', 'tomato'],
+        'burger': ['burger buns', 'ground beef', 'cheese', 'lettuce', 'tomato']
     };
     
     const ingredients = new Set();
     Object.values(mealPlan).forEach(meal => {
         const mealLower = meal.toLowerCase();
+        let matched = false;
         Object.keys(commonIngredients).forEach(key => {
             if (mealLower.includes(key)) {
                 commonIngredients[key].forEach(ing => ingredients.add(ing));
+                matched = true;
             }
         });
+        if (!matched && meal.trim()) {
+            ingredients.add(meal.split(' ').slice(0, 2).join(' '));
+        }
     });
     
     return Array.from(ingredients);
