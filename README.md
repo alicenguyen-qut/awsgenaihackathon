@@ -131,8 +131,6 @@ awsgenaihackathon/
 ├── sessions/                     # Local user session data (gitignored)
 ├── uploads/                      # Local uploaded files (gitignored)
 ├── .gitignore
-├── AWS_BEDROCK_SETUP.md         # Bedrock deployment guide
-├── CODE_REVIEW.md               # Code review summary
 ├── DEPLOYMENT.md                # AWS deployment guide
 ├── FEATURES.md                  # Feature documentation
 ├── Makefile                     # Build commands
