@@ -31,6 +31,18 @@ echo ""
 echo "✅ CloudFormation deployment complete!"
 echo ""
 
+# Wait for instance to be running
+echo "Waiting for EC2 instance to be ready..."
+INSTANCE_ID=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`InstanceId`].OutputValue' \
+  --output text)
+
+aws ec2 wait instance-running --instance-ids $INSTANCE_ID --region $REGION
+echo "✅ Instance is running"
+echo ""
+
 # Get outputs
 echo "Getting deployment details..."
 INSTANCE_ID=$(aws cloudformation describe-stacks \
@@ -63,15 +75,14 @@ SSH_COMMAND=$(aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs[?OutputKey==`SSHCommand`].OutputValue' \
   --output text)
 
-# Download private key
-echo "Downloading EC2 private key..."
-aws ec2 describe-key-pairs \
-  --key-names cooking-assistant-key \
-  --region $REGION \
-  --include-public-key \
-  --query 'KeyPairs[0].KeyMaterial' \
-  --output text > cooking-assistant-key.pem 2>/dev/null || echo "Key pair already exists locally"
-chmod 400 cooking-assistant-key.pem 2>/dev/null || true
+# Index recipes to S3
+echo "Indexing recipes to S3..."
+export AWS_REGION=$REGION
+export RECIPES_BUCKET=$S3_BUCKET
+export S3_BUCKET=$S3_BUCKET
+python3 scripts/index_recipes.py
+echo "✅ Recipes indexed to S3"
+echo ""
 
 echo ""
 echo "==========================================="
@@ -86,7 +97,10 @@ echo "   - CloudFormation stack: $STACK_NAME"
 echo "   - EC2 instance: $INSTANCE_ID"
 echo "   - Public IP: $PUBLIC_IP"
 echo "   - S3 bucket: $S3_BUCKET"
-echo "   - Key pair: cooking-assistant-key"
+echo "     • Recipe embeddings: s3://$S3_BUCKET/embeddings/"
+echo "     • Recipe texts: s3://$S3_BUCKET/recipes/"
+echo "     • User sessions: s3://$S3_BUCKET/sessions/"
+echo "     • User uploads: s3://$S3_BUCKET/uploads/"
 echo ""
 echo "🔧 SSH access:"
 echo "   $SSH_COMMAND"

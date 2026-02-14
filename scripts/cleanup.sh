@@ -9,26 +9,46 @@ echo ""
 
 # Configuration
 REGION="ap-southeast-2"
-APP_RUNNER_STACK="cooking-assistant-stack"
-EC2_STACK="cooking-assistant-ec2-stack"
-REPO_NAME="cooking-assistant"
-
-# Check which stacks exist
-APP_RUNNER_EXISTS=$(aws cloudformation describe-stacks --stack-name $APP_RUNNER_STACK --region $REGION 2>/dev/null && echo "true" || echo "false")
-EC2_EXISTS=$(aws cloudformation describe-stacks --stack-name $EC2_STACK --region $REGION 2>/dev/null && echo "true" || echo "false")
+STACK_NAME="cooking-assistant-ec2-stack"
 
 echo "Checking existing resources..."
-echo "App Runner stack exists: $APP_RUNNER_EXISTS"
-echo "EC2 stack exists: $EC2_EXISTS"
-echo ""
 
-if [ "$APP_RUNNER_EXISTS" = "false" ] && [ "$EC2_EXISTS" = "false" ]; then
-    echo "No CloudFormation stacks found to delete."
-    exit 0
+# Check if stack exists
+STACK_EXISTS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGION 2>/dev/null && echo "true" || echo "false")
+
+if [ "$STACK_EXISTS" = "false" ]; then
+    echo "❌ No CloudFormation stack found: $STACK_NAME"
+    echo ""
+    echo "Checking for orphaned resources..."
+    
+    # Check for S3 buckets
+    BUCKETS=$(aws s3 ls | grep "cooking-assistant-data" | awk '{print $3}' || echo "")
+    if [ -n "$BUCKETS" ]; then
+        echo "Found S3 buckets:"
+        echo "$BUCKETS"
+    else
+        echo "No resources found to clean up."
+        exit 0
+    fi
+else
+    echo "✅ Found stack: $STACK_NAME"
+    
+    # Get S3 bucket name from stack
+    S3_BUCKET=$(aws cloudformation describe-stacks \
+      --stack-name $STACK_NAME \
+      --region $REGION \
+      --query 'Stacks[0].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
+      --output text 2>/dev/null || echo "")
+    
+    if [ -n "$S3_BUCKET" ]; then
+        echo "✅ Found S3 bucket: $S3_BUCKET"
+    fi
 fi
 
+echo ""
+
 # Confirm deletion
-read -p "⚠️  This will delete ALL AWS resources (CloudFormation stacks, S3 buckets, EC2 instances, ECR repository). Continue? (yes/no): " CONFIRM
+read -p "⚠️  This will DELETE ALL AWS resources and data. Continue? (yes/no): " CONFIRM
 
 if [ "$CONFIRM" != "yes" ]; then
   echo "Cleanup cancelled."
@@ -37,38 +57,48 @@ fi
 
 echo ""
 
-# Delete App Runner stack if exists
-if [ "$APP_RUNNER_EXISTS" = "true" ]; then
-    echo "Deleting App Runner CloudFormation stack..."
-    aws cloudformation delete-stack --stack-name $APP_RUNNER_STACK --region $REGION
-    echo "Waiting for App Runner stack deletion..."
-    aws cloudformation wait stack-delete-complete --stack-name $APP_RUNNER_STACK --region $REGION
-    echo "✅ App Runner CloudFormation stack deleted"
+# Delete S3 bucket contents first (required before stack deletion)
+if [ -n "$S3_BUCKET" ]; then
+    echo "Emptying S3 bucket: $S3_BUCKET"
+    aws s3 rm s3://$S3_BUCKET --recursive --region $REGION 2>/dev/null && echo "✅ S3 bucket emptied" || echo "⚠️  S3 bucket already empty or not found"
     echo ""
 fi
 
-# Delete EC2 stack if exists
-if [ "$EC2_EXISTS" = "true" ]; then
-    echo "Deleting EC2 CloudFormation stack..."
-    aws cloudformation delete-stack --stack-name $EC2_STACK --region $REGION
-    echo "Waiting for EC2 stack deletion..."
-    aws cloudformation wait stack-delete-complete --stack-name $EC2_STACK --region $REGION
-    echo "✅ EC2 CloudFormation stack deleted"
+# Delete CloudFormation stack
+if [ "$STACK_EXISTS" = "true" ]; then
+    echo "Deleting CloudFormation stack: $STACK_NAME"
+    aws cloudformation delete-stack --stack-name $STACK_NAME --region $REGION
+    
+    echo "Waiting for stack deletion (this may take 2-3 minutes)..."
+    aws cloudformation wait stack-delete-complete --stack-name $STACK_NAME --region $REGION 2>/dev/null || true
+    
+    echo "✅ CloudFormation stack deleted"
     echo ""
 fi
 
-# Delete ECR repository
-echo "Deleting ECR repository..."
-aws ecr delete-repository \
-  --repository-name $REPO_NAME \
-  --region $REGION \
-  --force 2>/dev/null && echo "✅ ECR repository deleted" || echo "⚠️  ECR repository not found"
+# Clean up orphaned S3 buckets (if any)
+echo "Checking for orphaned S3 buckets..."
+ORPHANED_BUCKETS=$(aws s3 ls | grep "cooking-assistant-data" | awk '{print $3}' || echo "")
+if [ -n "$ORPHANED_BUCKETS" ]; then
+    echo "Found orphaned buckets:"
+    for BUCKET in $ORPHANED_BUCKETS; do
+        echo "  - $BUCKET"
+        aws s3 rm s3://$BUCKET --recursive --region $REGION 2>/dev/null || true
+        aws s3 rb s3://$BUCKET --region $REGION 2>/dev/null && echo "    ✅ Deleted" || echo "    ⚠️  Could not delete"
+    done
+else
+    echo "✅ No orphaned S3 buckets found"
+fi
+echo ""
+
+# Delete EC2 key pair
+echo "Deleting EC2 key pair..."
+aws ec2 delete-key-pair --key-name cooking-assistant-key --region $REGION 2>/dev/null && echo "✅ Key pair deleted" || echo "⚠️  Key pair not found"
+echo ""
 
 # Clean up local files
-echo ""
 echo "Cleaning up local files..."
 rm -f cooking-assistant-key.pem
-rm -f ${REPO_NAME}-key.pem
 echo "✅ Local key files cleaned up"
 
 echo ""
@@ -76,5 +106,13 @@ echo "=========================================="
 echo "  Cleanup Complete!"
 echo "=========================================="
 echo ""
-echo "All AWS resources have been deleted."
+echo "✅ All AWS resources deleted:"
+echo "   - CloudFormation stack"
+echo "   - EC2 instance"
+echo "   - S3 bucket (all data)"
+echo "   - Security groups"
+echo "   - IAM roles"
+echo "   - EC2 key pair"
+echo ""
+echo "💰 You will no longer be charged for these resources."
 echo ""

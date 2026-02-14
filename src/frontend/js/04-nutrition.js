@@ -101,11 +101,13 @@ async function updateDashboard() {
     if (recsEl && recs.recommendations) {
         recsEl.innerHTML = recs.recommendations.length === 0 
             ? '<p style="text-align: center; color: #718096; padding: 20px;">🎉 Great job! You\'re on track today.</p>'
-            : recs.recommendations.map(r => r.type === 'meal' 
-                ? `<div class="rec-card" style="background: white; border: 2px solid rgba(116, 185, 255, 0.3); padding: 16px; border-radius: 12px; margin-bottom: 12px; transition: all 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(116, 185, 255, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"><div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;"><strong style="color: #2d3748; font-size: 16px;">${r.title}</strong><span style="background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;">${r.calories} cal</span></div><div style="color: #718096; font-size: 13px; margin-bottom: 8px;">${r.reason}</div><div style="color: #74b9ff; font-size: 12px; font-weight: 600;">💪 ${r.protein}g protein</div></div>`
+            : recs.recommendations.map((r, i) => r.type === 'meal' 
+                ? `<div class="rec-card" onclick="showRecommendationDetails(${i})" style="background: white; border: 2px solid rgba(116, 185, 255, 0.3); padding: 16px; border-radius: 12px; margin-bottom: 12px; transition: all 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(116, 185, 255, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"><div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;"><strong style="color: #2d3748; font-size: 16px;">${r.title}</strong><span style="background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;">${r.calories} cal</span></div><div style="color: #718096; font-size: 13px; margin-bottom: 8px;">${r.reason}</div><div style="color: #74b9ff; font-size: 12px; font-weight: 600;">💪 ${r.protein}g protein • Click for recipe</div></div>`
                 : `<div class="rec-tip" style="background: linear-gradient(135deg, #ffeaa7 0%, #ffd89b 100%); padding: 14px 16px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; color: #2d3748; font-weight: 500; box-shadow: 0 2px 8px rgba(255, 234, 167, 0.3);">${r.message}</div>`
             ).join('');
     }
+    
+    window.currentRecommendations = recs.recommendations;
 }
 
 window.showLogMealModal = () => {
@@ -261,3 +263,54 @@ Close</button>
     
     document.body.appendChild(modal);
 }
+
+window.showRecommendationDetails = async (index) => {
+    const rec = window.currentRecommendations[index];
+    if (!rec || rec.type !== 'meal') return;
+    
+    const modal = document.createElement('div');
+    modal.id = 'rec-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2000;';
+    modal.innerHTML = `
+        <div style="background: white; padding: 32px; border-radius: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.4);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 48px; margin-bottom: 12px;">🍽️</div>
+                <h2 style="font-size: 24px; font-weight: 700; color: #2d3748;">${rec.title}</h2>
+                <p style="color: #718096; margin-top: 8px;">${rec.reason}</p>
+            </div>
+            <div id="recipe-content" style="text-align: center; padding: 20px; color: #718096;">Loading recipe...</div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button onclick="document.getElementById('rec-modal').remove()" style="flex: 1; padding: 12px; background: #e2e8f0; color: #2d3748; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">Close</button>
+                <button onclick="quickLogRecommendation(${index})" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">✓ Log This Meal</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({query: `Give me a detailed recipe for ${rec.title} with ingredients and instructions`})
+        });
+        const data = await response.json();
+        modal.querySelector('#recipe-content').innerHTML = `<div style="white-space: pre-wrap; text-align: left; line-height: 1.8; color: #2d3748;">${data.response}</div>`;
+    } catch (error) {
+        modal.querySelector('#recipe-content').innerHTML = '<p style="color: #e53e3e;">Failed to load recipe</p>';
+    }
+};
+
+window.quickLogRecommendation = async (index) => {
+    const rec = window.currentRecommendations[index];
+    await logMeal({
+        meal_type: 'Lunch',
+        name: rec.title,
+        calories: rec.calories,
+        protein: rec.protein,
+        carbs: Math.round(rec.calories * 0.5 / 4),
+        fats: Math.round(rec.calories * 0.3 / 9)
+    });
+    document.getElementById('rec-modal')?.remove();
+    await updateDashboard();
+    showAlert('Meal logged successfully!', 'success');
+};

@@ -13,6 +13,8 @@ MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 # AWS Configuration
 USE_AWS = os.environ.get('USE_AWS', 'false').lower() == 'true'
 AWS_REGION = os.environ.get('AWS_REGION', 'ap-southeast-2')
+RECIPES_BUCKET = os.environ.get('RECIPES_BUCKET', 'cooking-assistant-recipes')
+S3_BUCKET = os.environ.get('S3_BUCKET', RECIPES_BUCKET)
 
 # Mock Recipes Data
 MOCK_RECIPES = [

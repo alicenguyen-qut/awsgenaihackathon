@@ -2,7 +2,7 @@ import json
 import boto3
 import os
 
-BUCKET = os.environ.get('RECIPES_BUCKET', 'cooking-assistant-recipes')
+BUCKET = os.environ.get('S3_BUCKET') or os.environ.get('RECIPES_BUCKET', 'cooking-assistant-recipes')
 REGION = os.environ.get('AWS_REGION', 'ap-southeast-2')
 
 bedrock = boto3.client('bedrock-runtime', region_name=REGION)

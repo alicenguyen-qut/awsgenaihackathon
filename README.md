@@ -5,11 +5,13 @@ Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) wit
 ## Architecture
 
 ```
-User → Flask UI → EC2 Instance → Bedrock (Claude)
+User → Flask UI → EC2 Instance → Bedrock (Claude + Titan)
                       ↓
-                S3 (Embeddings)
-                      ↑
-                Titan Embeddings
+                  S3 Bucket
+                  ├── embeddings/    (Recipe embeddings)
+                  ├── recipes/       (Recipe texts)
+                  ├── sessions/      (User data)
+                  └── uploads/       (User files)
 ```
 
 **Cost-Optimized:** Uses EC2 t3.micro + S3 + in-memory vector search
@@ -46,7 +48,7 @@ User → Flask UI → EC2 Instance → Bedrock (Claude)
 - **LLM:** Amazon Bedrock 
 - **Embeddings:** Amazon Titan Embeddings
 - **Vector Storage:** S3 + NumPy cosine similarity
-- **Session Storage:** JSON file-based
+- **Session Storage:** S3 (AWS mode) or JSON file-based (local mode)
 
 ## Quick Start
 
@@ -128,6 +130,7 @@ awsgenaihackathon/
 ├── sessions/                      # Local user session data (gitignored)
 ├── uploads/                       # Local uploaded files (gitignored)
 ├── .gitignore
+├── DEPLOYMENT.md                  # AWS deployment guide
 ├── FEATURES.md                    # Feature documentation
 ├── Makefile                       # Build commands
 ├── README.md                      # Main documentation
@@ -139,8 +142,10 @@ awsgenaihackathon/
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `USE_AWS` | Enable AWS mode | `false` | No |
+| `AWS_REGION` | AWS region | `ap-southeast-2` | AWS mode only |
+| `S3_BUCKET` | S3 bucket for all data | - | AWS mode only |
+| `RECIPES_BUCKET` | S3 bucket (legacy) | Same as S3_BUCKET | AWS mode only |
 | `SECRET_KEY` | Flask secret key | `dev-secret-key-change-in-production` | Production only |
-| `RECIPES_BUCKET` | S3 bucket name | - | AWS mode only |
 
 ## Available Commands
 
@@ -295,14 +300,18 @@ make cleanup
 
 #### What Gets Deployed:
 - **EC2 t3.micro instance** - $8.76/month (750 free tier hours)
-- **S3 bucket** - ~$1-3/month for user data storage
+- **S3 bucket** - ~$1-3/month for all data storage
+  - Recipe embeddings (Titan V2)
+  - Recipe text files
+  - User session data
+  - User uploaded files
 - **Security groups** - Free
 - **IAM roles** - Free
 - **EC2 Key Pair** - Free
 
 #### Services Used:
 - **Amazon Bedrock** - Claude 3 Haiku + Titan Embeddings (~$15-25/month based on usage)
-- **Amazon S3** - Recipe embeddings and user data storage
+- **Amazon S3** - Unified storage for recipes and user data
 - **Amazon EC2** - Web server hosting
 
 #### Deployment Process:
@@ -311,7 +320,10 @@ make cleanup
 3. Installs Python dependencies and Flask app
 4. Configures nginx reverse proxy
 5. Sets up systemd service for auto-restart
-6. Indexes recipes to S3
+6. Indexes recipes to S3 (from local machine)
+7. EC2 instance auto-indexes on startup
+
+**See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment guide.**
 
 #### Access:
 - **Web App**: `http://<public-ip>`

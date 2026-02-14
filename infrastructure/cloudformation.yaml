@@ -4,7 +4,7 @@ Description: 'Personal Cooking Assistant - EC2 Deployment (Cost Optimized)'
 Parameters:
   S3BucketName:
     Type: String
-    Description: S3 bucket name for user data storage
+    Description: S3 bucket name for recipes and user data storage
     Default: !Sub 'cooking-assistant-data-${AWS::AccountId}'
 
 Resources:
@@ -16,7 +16,7 @@ Resources:
       KeyType: rsa
       KeyFormat: pem
 
-  # S3 Bucket for user data
+  # S3 Bucket for recipes and user data
   DataBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -33,6 +33,11 @@ Resources:
           - Id: DeleteOldVersions
             Status: Enabled
             NoncurrentVersionExpirationInDays: 30
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE]
+            AllowedHeaders: ['*']
 
   # Security Group
   WebSecurityGroup:
@@ -122,6 +127,13 @@ Resources:
           echo "RECIPES_BUCKET=${S3BucketName}" >> /etc/environment
           echo "S3_BUCKET=${S3BucketName}" >> /etc/environment
           
+          # Index recipes to S3
+          export USE_AWS=true
+          export AWS_REGION=${AWS::Region}
+          export RECIPES_BUCKET=${S3BucketName}
+          export S3_BUCKET=${S3BucketName}
+          python3 scripts/index_recipes.py
+          
           # Create systemd service
           cat > /etc/systemd/system/cooking-assistant.service << EOF
           [Unit]
@@ -164,10 +176,6 @@ Resources:
           systemctl start cooking-assistant
           systemctl enable nginx
           systemctl start nginx
-          
-          # Index recipes
-          cd /home/ec2-user/awsgenaihackathon
-          python3 scripts/index_recipes.py
 
       Tags:
         - Key: Name
