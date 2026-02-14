@@ -32,7 +32,13 @@ export RECIPES_BUCKET=$(aws cloudformation describe-stacks \
     --stack-name cooking-assistant \
     --region $AWS_REGION \
     --query 'Stacks[0].Outputs[?OutputKey==`RecipesBucket`].OutputValue' \
-    --output text)
+    --output text 2>/dev/null)
+
+if [ -z "$RECIPES_BUCKET" ]; then
+    echo "   ❌ Failed to get bucket name. Stack may have failed."
+    echo "   Check CloudFormation console for errors."
+    exit 1
+fi
 
 export API_ENDPOINT=$(aws cloudformation describe-stacks \
     --stack-name cooking-assistant \
@@ -44,7 +50,12 @@ export LAMBDA_FUNCTION=$(aws cloudformation describe-stacks \
     --stack-name cooking-assistant \
     --region $AWS_REGION \
     --query 'Stacks[0].Outputs[?OutputKey==`LambdaFunction`].OutputValue' \
-    --output text)
+    --output text 2>/dev/null)
+
+if [ -z "$LAMBDA_FUNCTION" ]; then
+    echo "   ❌ Failed to get Lambda function name."
+    exit 1
+fi
 
 echo "   S3 Bucket: $RECIPES_BUCKET"
 echo "   API Endpoint: $API_ENDPOINT"
@@ -58,7 +69,7 @@ rm -rf package lambda.zip
 mkdir -p package
 
 # Install dependencies
-pip install -q -r ../requirements.txt -t package/
+pip install -q --index-url https://pypi.org/simple -r ../requirements.txt -t package/
 
 # Copy source files
 cp lambda_function.py package/

@@ -19,7 +19,7 @@ rm -rf package lambda.zip
 mkdir -p package
 
 echo "📦 Installing dependencies..."
-pip install -q -r ../requirements.txt -t package/
+pip install -q --index-url https://pypi.org/simple -r ../requirements.txt -t package/
 
 echo "📁 Copying source files..."
 cp lambda_function.py package/

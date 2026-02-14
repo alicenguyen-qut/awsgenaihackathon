@@ -9,8 +9,7 @@ Parameters:
 Resources:
   RecipesBucket:
     Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub '${ProjectName}-recipes-${AWS::AccountId}'
+    DeletionPolicy: Delete
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -57,7 +56,6 @@ Resources:
       Environment:
         Variables:
           RECIPES_BUCKET: !Ref RecipesBucket
-          AWS_REGION: !Ref AWS::Region
       Code:
         ZipFile: |
           def lambda_handler(event, context):
