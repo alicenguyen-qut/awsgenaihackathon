@@ -1,6 +1,6 @@
 # Personal Cooking Assistant
 
-Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) with AWS Bedrock services, hosted on AWS EC2 and data storage via S3.
+Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) with AWS Bedrock services, hosted on AWS Elastic Beanstalk and data storage via S3.
 
 ## Architecture
 
@@ -44,27 +44,29 @@ User → Flask UI → Elastic Beanstalk → Bedrock (Claude + Titan)
 
 - **Frontend:** Flask + HTML/CSS + JavaScript
 - **Backend:** Python (Flask)
-- **Infrastructure:** Elastic Beanstalk + CloudFormation
-- **LLM:** Amazon Bedrock 
+- **Infrastructure:** Webapp hosted on Elastic Beanstalk All services deployed via CloudFormation
+- **LLM:** Amazon Bedrock Haiku 
 - **Embeddings:** Amazon Titan Embeddings
-- **S3 Vector:** S3 + NumPy cosine similarity
-- **Session Storage:** S3 
+- **S3 Storage:** S3 (User data, session data, embedding data running NumPy cosine similarity)
+
+## Cloudformation deployment
+- Elastic Beanstalk using t3.micro EC2 instance with Flask app
+- S3 bucket for all data storage
+- Security Group (HTTP, HTTPS, SSH)
+- IAM Role (S3 + Bedrock permissions)
+
 ## Quick Start
 
 ### Prerequisites
 - Python 3.9+
-- pip (Python package manager)
+- uv and pip (Python package manager)
 - AWS CLI (for deployment)
-- make CLI (optional)
+- Make CLI
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd awsgenaihackathon
-
 # Install dependencies
+```
 make install
 ```
 
@@ -75,23 +77,19 @@ make run
 # Visit http://localhost:5000
 ```
 
-The app will start in **LOCAL MODE** by default, using mock data and file-based storage.
-
-### Running with AWS (Elastic Beanstalk)
+### Deploy to AWS
 
 ```bash
-# 1. Deploy to AWS
+# Deploy to AWS
+# This script will also run AWS Cloudformation CLI to deploy `infrastructure/cloudformation.yaml`
 chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
-
-# 2. Get your URL from the output
-
-# 3. Cleanup when done
+```
+```bash
+# Cleanup - deleting all resrouces
 chmod +x scripts/cleanup.sh
 ./scripts/cleanup.sh
 ```
-
-**That's it!** CloudFormation handles everything - no manual setup needed.
 
 ## Project Structure
 
@@ -189,5 +187,3 @@ awsgenaihackathon/
 ### Settings
 - `POST /api/clear-chats` - Clear all chats
 - `POST /api/clear-files` - Clear all uploaded files
-
-See [FEATURES.md](FEATURES.md) for detailed API documentation with examples.

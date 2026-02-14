@@ -1,6 +1,7 @@
 .PHONY: install run deploy clean help
 
 install:
+	@uv venv
 	@echo "Installing Python dependencies..."
 	@uv pip install -r requirements.txt
 
