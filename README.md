@@ -104,29 +104,40 @@ awsgenaihackathon/
 ├── scripts/                       # Deployment scripts
 │   ├── deploy_full.sh
 │   ├── deploy_lambda.sh
-│   ├── index_recipes.py
+│   ├── index_recipes.py          # Recipe indexing (Titan V2)
+│   ├── package_lambda.sh
 │   └── upload_ui.sh
 ├── src/
-│   ├── app.py                    # Main app
+│   ├── app.py                    # Main Flask application
 │   ├── lambda_function.py        # Lambda handler for AWS
-│   ├── frontend/
-│   │   └── js/
-│   │       ├── 01-core.js        # Core utilities & initialization
-│   │       ├── 02-auth.js        # Authentication & user management
-│   │       ├── 03-chat.js        # Chat operations & messages
-│   │       ├── 04-nutrition.js   # Nutrition tracking & analytics
-│   │       ├── 05-meals.js       # Favorites, planner, shopping
-│   │       ├── 06-files.js       # File upload/management
-│   │       └── 07-agent.js       # AI autonomous agent
-│   └── templates/
-│       └── index.html            # Main UI template
-├── sessions/                     # Local user session data (gitignored) - To move to Cloud DB
-├── uploads/                      # Local user ploaded files (gitignored) - To move to Cloud DB
+│   ├── models/                   # AI/ML models
+│   │   ├── __init__.py
+│   │   └── bedrock_rag.py       # Bedrock RAG (Titan V2 + Claude)
+│   ├── utils/                    # Helper functions & config
+│   │   ├── __init__.py
+│   │   ├── config.py            # Configuration & constants
+│   │   └── helpers.py           # User data, file handling
+│   └── frontend/                # Frontend assets
+│       ├── js/                  # Modular JavaScript
+│       │   ├── 01-core.js      # Core utilities & initialization
+│       │   ├── 02-auth.js      # Authentication & user management
+│       │   ├── 03-chat.js      # Chat operations & messages
+│       │   ├── 04-nutrition.js # Nutrition tracking & analytics
+│       │   ├── 05-meals.js     # Favorites, planner, shopping
+│       │   ├── 06-files.js     # File upload/management
+│       │   └── 07-agent.js     # AI autonomous agent
+│       └── templates/
+│           └── index.html      # Main UI template
+├── sessions/                     # Local user session data (gitignored)
+├── uploads/                      # Local uploaded files (gitignored)
 ├── .gitignore
-├── DEPLOYMENT.md                 # AWS deployment guide
-├── FEATURES.md                   # Feature documentation
-├── Makefile                      # Build commands
-└── requirements.txt              # Python dependencies
+├── AWS_BEDROCK_SETUP.md         # Bedrock deployment guide
+├── CODE_REVIEW.md               # Code review summary
+├── DEPLOYMENT.md                # AWS deployment guide
+├── FEATURES.md                  # Feature documentation
+├── Makefile                     # Build commands
+├── README.md                    # Main documentation
+└── requirements.txt             # Python dependencies
 ```
 
 ## Environment Variables
@@ -259,15 +270,18 @@ python test_daily_features.py
 ### Code Organization
 
 - **Backend:** `src/app.py` - All Flask routes and business logic
+- **Configuration:** `src/utils/config.py` - Environment variables and constants
+- **Helpers:** `src/utils/helpers.py` - User data and file handling utilities
+- **AI Models:** `src/models/bedrock_rag.py` - Bedrock RAG implementation
 - **Frontend JS:** `src/frontend/js/` - Modular JavaScript files
-- **Templates:** `src/templates/` - HTML templates
+- **Templates:** `src/frontend/templates/` - HTML templates
 - **Styles:** Inline in `index.html` (consider extracting to CSS file)
 
 ### Adding New Features
 
 1. **Backend:** Add route in `src/app.py`
-2. **Frontend:** Add function in appropriate JS file
-3. **UI:** Update `src/templates/index.html`
+2. **Frontend:** Add function in appropriate JS file in `src/frontend/js/`
+3. **UI:** Update `src/frontend/templates/index.html`
 4. **Test:** Verify locally before deploying
 
 ## Deployment

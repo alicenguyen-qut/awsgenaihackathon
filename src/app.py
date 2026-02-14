@@ -3,95 +3,33 @@ import json
 import os
 import uuid
 from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from docx import Document
 
-# Configuration
-USE_AWS = os.environ.get('USE_AWS', 'false').lower() == 'true'
+# Import configuration and utilities
+from utils.config import USE_AWS, MOCK_RECIPES, SECRET_KEY, UPLOAD_FOLDER, SESSIONS_FOLDER, MAX_CONTENT_LENGTH
+from utils.helpers import allowed_file, get_user_file, load_user_data, save_user_data, find_user_by_username
 
-app = Flask(__name__, static_folder='frontend')
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['SESSIONS_FOLDER'] = 'sessions'
-ALLOWED_EXTENSIONS = {'txt', 'docx', 'pdf'}
+# Import Bedrock RAG if AWS mode
+if USE_AWS:
+    from models.bedrock_rag import BedrockRAG
+    bedrock_rag = BedrockRAG()
+else:
+    bedrock_rag = None
+
+app = Flask(__name__, static_folder='frontend', template_folder='frontend/templates')
+app.secret_key = SECRET_KEY
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+app.config['SESSIONS_FOLDER'] = SESSIONS_FOLDER
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['SESSIONS_FOLDER'], exist_ok=True)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def find_user_by_username(username):
-    """Find user data by username across all sessions"""
-    sessions_folder = app.config['SESSIONS_FOLDER']
-    for filename in os.listdir(sessions_folder):
-        if filename.endswith('.json'):
-            filepath = os.path.join(sessions_folder, filename)
-            try:
-                with open(filepath, 'r') as f:
-                    data = json.load(f)
-                    if data.get('username', '').lower() == username.lower():
-                        user_id = filename.replace('.json', '')
-                        return user_id, data
-            except:
-                pass
-    return None, None
 
 def get_user_session():
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
     return session['user_id']
-
-def get_user_file(user_id):
-    return os.path.join(app.config['SESSIONS_FOLDER'], f'{user_id}.json')
-
-def load_user_data(user_id):
-    filepath = get_user_file(user_id)
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as f:
-            return json.load(f)
-    return {
-        'chats': [],
-        'current_chat': None,
-        'username': '',
-        'uploaded_files': [],
-        'password_hash': None,
-        'nutrition_logs': [],
-        'streaks': {'current': 0, 'longest': 0, 'last_login': ''},
-        'favorites': [],
-        'meal_plan': {},
-        'shopping_list': [],
-        'nutrition_profile': {}
-    }
-
-def save_user_data(user_id, data):
-    filepath = get_user_file(user_id)
-    with open(filepath, 'w') as f:
-        json.dump(data, f, indent=2)
-
-# Mock data for local development
-MOCK_RECIPES = [
-    {
-        "name": "Grilled Chicken Salad",
-        "description": "Healthy Mediterranean-style grilled chicken salad with fresh vegetables",
-        "tags": ["high-protein", "low-carb", "gluten-free"],
-        "calories": 380
-    },
-    {
-        "name": "Vegetarian Buddha Bowl",
-        "description": "Colorful bowl with quinoa, chickpeas, sweet potato, and tahini dressing",
-        "tags": ["vegan", "high-fiber", "gluten-free"],
-        "calories": 520
-    },
-    {
-        "name": "Salmon with Roasted Vegetables",
-        "description": "Omega-3 rich salmon with broccoli, bell pepper, and zucchini",
-        "tags": ["high-protein", "low-carb", "omega-3"],
-        "calories": 420
-    }
-]
 
 @app.route('/')
 def home():
@@ -109,7 +47,7 @@ def login():
             return jsonify({'error': 'Username and password required'}), 400
         
         # Check if user exists
-        existing_user_id, existing_user_data = find_user_by_username(username)
+        existing_user_id, existing_user_data = find_user_by_username(username, app.config["SESSIONS_FOLDER"])
         
         if existing_user_data:
             # Existing user - verify password
@@ -122,7 +60,7 @@ def login():
         else:
             # New user registration
             user_id = get_user_session()  # This creates a new session ID
-            user_data = load_user_data(user_id)
+            user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
             
             user_data['username'] = username
             user_data['password_hash'] = generate_password_hash(password)
@@ -131,7 +69,7 @@ def login():
             user_data['favorites'] = []
             user_data['meal_plan'] = {}
             user_data['shopping_list'] = []
-            save_user_data(user_id, user_data)
+            save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
             
             return jsonify({'success': True, 'username': username})
             
@@ -152,7 +90,7 @@ def upload_profile_photo():
             return jsonify({'error': 'No file selected'}), 400
         
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         # Ensure uploads directory exists
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -162,7 +100,7 @@ def upload_profile_photo():
         file.save(filepath)
         
         user_data['profile_photo'] = f'/uploads/{filename}'
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         return jsonify({'success': True, 'photoUrl': user_data['profile_photo']})
     except Exception as e:
@@ -175,7 +113,7 @@ def upload_profile_photo():
 def delete_profile_photo():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         # Delete photo file if exists
         if 'profile_photo' in user_data and user_data['profile_photo']:
@@ -185,7 +123,7 @@ def delete_profile_photo():
                 os.remove(filepath)
         
         user_data['profile_photo'] = ''
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         return jsonify({'success': True})
     except Exception as e:
@@ -196,7 +134,7 @@ def delete_profile_photo():
 def get_profile_photo():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         return jsonify({'photoUrl': user_data.get('profile_photo', '')})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -210,14 +148,14 @@ def save_nutrition_profile():
     try:
         data = request.json
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         user_data['nutrition_profile'] = {
             'dietary': data.get('dietary', []),
             'healthGoal': data.get('healthGoal', ''),
             'allergies': data.get('allergies', [])
         }
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         return jsonify({'success': True})
     except Exception as e:
@@ -227,7 +165,7 @@ def save_nutrition_profile():
 def get_nutrition_profile():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         return jsonify({'profile': user_data.get('nutrition_profile', {})})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -248,13 +186,13 @@ def change_password():
             return jsonify({'error': 'All fields required'}), 400
         
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         if not check_password_hash(user_data.get('password_hash', ''), current_password):
             return jsonify({'error': 'Current password is incorrect'}), 401
         
         user_data['password_hash'] = generate_password_hash(new_password)
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         return jsonify({'success': True})
     except Exception as e:
@@ -264,10 +202,10 @@ def change_password():
 def clear_chats():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         user_data['chats'] = []
         user_data['current_chat'] = None
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -276,14 +214,14 @@ def clear_chats():
 def clear_files():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         for file_info in user_data.get('uploaded_files', []):
             if os.path.exists(file_info['filepath']):
                 os.remove(file_info['filepath'])
         
         user_data['uploaded_files'] = []
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -291,7 +229,7 @@ def clear_files():
 @app.route('/api/session', methods=['GET'])
 def get_session():
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     return jsonify({
         'user_id': user_id, 
         'username': user_data.get('username', ''),
@@ -302,7 +240,7 @@ def get_session():
 @app.route('/api/chat/new', methods=['POST'])
 def new_chat():
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     
     chat_id = str(uuid.uuid4())
     new_chat = {
@@ -314,31 +252,31 @@ def new_chat():
     
     user_data['chats'].append(new_chat)
     user_data['current_chat'] = chat_id
-    save_user_data(user_id, user_data)
+    save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
     
     return jsonify({'success': True, 'chat_id': chat_id})
 
 @app.route('/api/chat/<chat_id>', methods=['GET'])
 def get_chat(chat_id):
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     
     chat = next((c for c in user_data['chats'] if c['id'] == chat_id), None)
     if chat:
         user_data['current_chat'] = chat_id
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify(chat)
     return jsonify({'error': 'Chat not found'}), 404
 
 @app.route('/api/chat/<chat_id>', methods=['DELETE'])
 def delete_chat(chat_id):
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     
     user_data['chats'] = [c for c in user_data['chats'] if c['id'] != chat_id]
     if user_data['current_chat'] == chat_id:
         user_data['current_chat'] = user_data['chats'][0]['id'] if user_data['chats'] else None
-    save_user_data(user_id, user_data)
+    save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
     
     return jsonify({'success': True})
 
@@ -353,7 +291,7 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{user_id}_{filename}")
@@ -383,7 +321,7 @@ def upload_file():
         if 'uploaded_files' not in user_data:
             user_data['uploaded_files'] = []
         user_data['uploaded_files'].append(file_info)
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         MOCK_RECIPES.append({
             "name": filename,
@@ -404,14 +342,14 @@ def upload_file():
 @app.route('/api/files', methods=['GET'])
 def get_files():
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     files = user_data.get('uploaded_files', [])
     return jsonify({'files': [{'id': f['id'], 'filename': f['filename'], 'uploaded_at': f['uploaded_at']} for f in files]})
 
 @app.route('/api/files/<file_id>', methods=['GET'])
 def get_file_content(file_id):
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     files = user_data.get('uploaded_files', [])
     file_info = next((f for f in files if f['id'] == file_id), None)
     if file_info:
@@ -424,24 +362,24 @@ def get_file_content(file_id):
 @app.route('/api/files/<file_id>', methods=['DELETE'])
 def delete_file(file_id):
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     files = user_data.get('uploaded_files', [])
     file_info = next((f for f in files if f['id'] == file_id), None)
     if file_info:
         if os.path.exists(file_info['filepath']):
             os.remove(file_info['filepath'])
         user_data['uploaded_files'] = [f for f in files if f['id'] != file_id]
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     return jsonify({'error': 'File not found'}), 404
 
 @app.route('/chat', methods=['POST'])
 def chat():
     user_id = get_user_session()
-    user_data = load_user_data(user_id)
+    user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
     
     data = request.json
-    query = data.get('query', '').lower()
+    query = data.get('query', '')
     
     # Create new chat if none exists
     if not user_data['current_chat']:
@@ -458,11 +396,21 @@ def chat():
     # Find current chat
     current_chat = next((c for c in user_data['chats'] if c['id'] == user_data['current_chat']), None)
     
-    # HARDCODED RESPONSES FOR AGENT TESTING
-    response = ""
-    
-    if 'plan my week' in query or 'weekly meal plan' in query:
-        response = """Here's your weekly meal plan:
+    # Generate response
+    if USE_AWS and bedrock_rag:
+        # AWS Mode: Use Bedrock RAG
+        try:
+            user_profile = user_data.get('nutrition_profile', {})
+            response = bedrock_rag.chat_with_rag(query, MOCK_RECIPES, user_profile)
+        except Exception as e:
+            print(f"Bedrock error: {e}")
+            response = "I apologize, but I'm having trouble connecting to the AI service. Please try again."
+    else:
+        # Local Mode: Hardcoded responses
+        query_lower = query.lower()
+        
+        if 'plan my week' in query_lower or 'weekly meal plan' in query_lower:
+            response = """Here's your weekly meal plan:
 
 • Grilled Chicken Salad - Mediterranean-style with fresh vegetables (380 cal)
 • Salmon with Roasted Vegetables - Omega-3 rich with broccoli (420 cal)
@@ -473,24 +421,24 @@ def chat():
 • Veggie Tacos - Black beans, avocado, salsa (380 cal)
 
 All meals are balanced and nutritious!"""
-    
-    elif 'vegan' in query:
-        response = """🌱 Vegetarian Buddha Bowl - A colorful bowl with quinoa, chickpeas, sweet potato, and tahini dressing. High in fiber and plant-based protein (520 cal).
+        
+        elif 'vegan' in query_lower:
+            response = """🌱 Vegetarian Buddha Bowl - A colorful bowl with quinoa, chickpeas, sweet potato, and tahini dressing. High in fiber and plant-based protein (520 cal).
 
 Ingredients: quinoa, chickpeas, sweet potato, kale, tahini, lemon"""
-    
-    elif 'protein' in query or 'muscle' in query:
-        response = """💪 Grilled Chicken Salad - Mediterranean-style with fresh vegetables. Perfect for muscle growth (380 cal, 42g protein).
+        
+        elif 'protein' in query_lower or 'muscle' in query_lower:
+            response = """💪 Grilled Chicken Salad - Mediterranean-style with fresh vegetables. Perfect for muscle growth (380 cal, 42g protein).
 
 🐟 Salmon with Roasted Vegetables - Rich in omega-3 and protein (420 cal, 38g protein)."""
-    
-    elif 'breakfast' in query:
-        response = """⏰ Quick Protein Oatmeal - Steel-cut oats with banana, almonds, and protein powder (350 cal, 20g protein)
+        
+        elif 'breakfast' in query_lower:
+            response = """⏰ Quick Protein Oatmeal - Steel-cut oats with banana, almonds, and protein powder (350 cal, 20g protein)
 
 🥚 Veggie Egg Scramble - Eggs with spinach, tomatoes, and feta (280 cal, 18g protein)"""
-    
-    else:
-        response = """Here are some recipe suggestions:
+        
+        else:
+            response = """Here are some recipe suggestions:
 
 • Grilled Chicken Salad - Mediterranean-style with fresh vegetables (380 cal)
 • Vegetarian Buddha Bowl - Quinoa, chickpeas, sweet potato (520 cal)  
@@ -507,7 +455,7 @@ All meals are balanced and nutritious!"""
         if len(current_chat['messages']) == 2:
             current_chat['title'] = query[:50]
         
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
     
     return jsonify({'response': response})
 
@@ -516,7 +464,7 @@ def toggle_favorite():
     try:
         data = request.json
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         if 'favorites' not in user_data:
             user_data['favorites'] = []
@@ -535,7 +483,7 @@ def toggle_favorite():
             user_data['favorites'].append(recipe)
             added = True
         
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True, 'added': added})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -544,7 +492,7 @@ def toggle_favorite():
 def get_favorites():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         return jsonify({'favorites': user_data.get('favorites', [])})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -553,7 +501,7 @@ def get_favorites():
 def get_meal_plan():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         return jsonify({'plan': user_data.get('meal_plan', {})})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -563,9 +511,9 @@ def save_meal_plan():
     try:
         data = request.json
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         user_data['meal_plan'] = data['plan']
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -574,7 +522,7 @@ def save_meal_plan():
 def get_shopping_list():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         return jsonify({'items': user_data.get('shopping_list', [])})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -584,13 +532,13 @@ def add_shopping_item():
     try:
         data = request.json
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         if 'shopping_list' not in user_data:
             user_data['shopping_list'] = []
         
         user_data['shopping_list'].append({'name': data['name'], 'checked': False})
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -599,10 +547,10 @@ def add_shopping_item():
 def toggle_shopping_item(index):
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         if 'shopping_list' in user_data and index < len(user_data['shopping_list']):
             user_data['shopping_list'][index]['checked'] = not user_data['shopping_list'][index]['checked']
-            save_user_data(user_id, user_data)
+            save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -611,10 +559,10 @@ def toggle_shopping_item(index):
 def delete_shopping_item(index):
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         if 'shopping_list' in user_data and index < len(user_data['shopping_list']):
             user_data['shopping_list'].pop(index)
-            save_user_data(user_id, user_data)
+            save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -623,9 +571,9 @@ def delete_shopping_item(index):
 def clear_shopping_list():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         user_data['shopping_list'] = []
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -636,7 +584,7 @@ def log_meal():
     try:
         data = request.json
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         if 'nutrition_logs' not in user_data:
             user_data['nutrition_logs'] = []
@@ -653,7 +601,7 @@ def log_meal():
             'timestamp': datetime.now().isoformat()
         }
         user_data['nutrition_logs'].append(log)
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True, 'log': log})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -662,7 +610,7 @@ def log_meal():
 def get_nutrition_logs():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
         logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == date]
         return jsonify({'logs': logs})
@@ -673,7 +621,7 @@ def get_nutrition_logs():
 def get_nutrition_stats():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
         logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == date]
         
@@ -687,9 +635,9 @@ def get_nutrition_stats():
 def delete_nutrition_log(log_id):
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         user_data['nutrition_logs'] = [l for l in user_data.get('nutrition_logs', []) if l['id'] != log_id]
-        save_user_data(user_id, user_data)
+        save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -699,7 +647,7 @@ def delete_nutrition_log(log_id):
 def get_streaks():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         if 'streaks' not in user_data:
             user_data['streaks'] = {'current': 0, 'longest': 0, 'last_login': None}
@@ -714,7 +662,7 @@ def get_streaks():
                 user_data['streaks']['current'] = 1
             user_data['streaks']['longest'] = max(user_data['streaks']['current'], user_data['streaks'].get('longest', 0))
             user_data['streaks']['last_login'] = today
-            save_user_data(user_id, user_data)
+            save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         return jsonify({'streaks': user_data['streaks']})
     except Exception as e:
@@ -724,7 +672,7 @@ def get_streaks():
 def get_nutrition_analytics():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         period = request.args.get('period', 'today')
         
         logs = user_data.get('nutrition_logs', [])
@@ -772,7 +720,7 @@ def get_nutrition_analytics():
 def get_daily_recommendations():
     try:
         user_id = get_user_session()
-        user_data = load_user_data(user_id)
+        user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         
         today = datetime.now().strftime('%Y-%m-%d')
         logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == today]

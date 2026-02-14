@@ -50,13 +50,11 @@ Thumbs.db
 # Logs
 *.log
 
-# Temporary or local files
-*.tmp
-.cache/
-uploads/
-sessions
-data
+# Local data (not committed)
 sessions/
 uploads/
+
+# Temporary files
+*.tmp
+.cache/
 *.lock
-__pycache__/
