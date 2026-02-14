@@ -189,8 +189,75 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div style="font-size: 36px; font-weight: 700; color: #2d3748; line-height: 1; margin: 4px 0;">${streaksData.streaks.current} days</div>
                 <div style="font-size: 13px; color: #8b6f8f; font-weight: 500;">Best: ${streaksData.streaks.longest} days</div>
             `;
+            streaksEl.style.cursor = 'pointer';
+            streaksEl.onclick = () => showStreakDetails(streaksData.streaks);
         }
     } catch (e) {
         console.log('Streaks not loaded yet');
     }
 });
+
+function showStreakDetails(streaks) {
+    const motivationalMessages = [
+        "Keep it up! Consistency is key! 💪",
+        "You're building amazing habits! 🌟",
+        "Every day counts towards your goals! 🎯",
+        "Your dedication is inspiring! 🚀",
+        "Small steps lead to big changes! 🌱"
+    ];
+    
+    const milestones = [
+        { days: 7, message: "One week strong! 🎉", achieved: streaks.current >= 7 },
+        { days: 30, message: "One month milestone! 🏆", achieved: streaks.current >= 30 },
+        { days: 100, message: "Century club! 🔥", achieved: streaks.current >= 100 },
+        { days: 365, message: "One year champion! 🌟", achieved: streaks.current >= 365 }
+    ];
+    
+    const nextMilestone = milestones.find(m => !m.achieved);
+    const daysToNext = nextMilestone ? nextMilestone.days - streaks.current : 0;
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2000;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 32px; border-radius: 24px; max-width: 500px; width: 90%; box-shadow: 0 25px 60px rgba(0,0,0,0.4);">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div style="font-size: 64px; margin-bottom: 16px;">🔥</div>
+                <h2 style="font-size: 28px; font-weight: 700; color: #2d3748; margin-bottom: 8px;">Your Streak</h2>
+                <div style="font-size: 48px; font-weight: 700; color: #fab1a0; margin: 16px 0;">${streaks.current} days</div>
+                <p style="color: #718096; font-size: 14px;">Best streak: ${streaks.longest} days</p>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #ffeaa7 0%, #ffd89b 100%); padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center;">
+                <p style="font-size: 16px; font-weight: 600; color: #8b6f8f; margin: 0;">${motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]}</p>
+            </div>
+            
+            ${nextMilestone ? `
+                <div style="background: rgba(250, 177, 160, 0.1); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                    <p style="font-size: 14px; color: #718096; margin-bottom: 8px;">Next Milestone</p>
+                    <p style="font-size: 18px; font-weight: 600; color: #2d3748; margin: 0;">${nextMilestone.message}</p>
+                    <p style="font-size: 14px; color: #fab1a0; margin-top: 4px;">${daysToNext} days to go!</p>
+                </div>
+            ` : '<div style="text-align: center; padding: 16px;"><p style="font-size: 18px; color: #fab1a0; font-weight: 600;">🏆 You\'ve reached all milestones!</p></div>'}
+            
+            <div style="margin-bottom: 20px;">
+                <p style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 12px;">Achievements</p>
+                ${milestones.map(m => `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: ${m.achieved ? 'rgba(195, 240, 202, 0.3)' : 'rgba(0,0,0,0.05)'}; border-radius: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 24px;">${m.achieved ? '✅' : '🔒'}</span>
+                        <div style="flex: 1;">
+                            <p style="font-size: 14px; font-weight: 600; color: ${m.achieved ? '#2d3748' : '#718096'}; margin: 0;">${m.days} Days</p>
+                            <p style="font-size: 12px; color: #718096; margin: 0;">${m.message}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <button onclick="this.closest('div').parentElement.remove()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%); color: #8b6f8f; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;">
+Close</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
