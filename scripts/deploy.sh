@@ -53,7 +53,7 @@ S3_BUCKET=$(aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
   --output text)
 
-# Index recipes to S3 (optional - skip if dependencies missing)
+# Index recipes to S3
 echo "Indexing recipes to S3..."
 export AWS_REGION=$REGION
 export RECIPES_BUCKET=$S3_BUCKET
