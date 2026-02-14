@@ -12,7 +12,7 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
                               Titan Embeddings
 ```
 
-**Cost-Optimized:** Uses S3 + in-memory vector search instead of OpenSearch (~$700/month savings!)
+**Cost-Optimized:** Uses S3 + in-memory vector search
 
 ## Key Features
 
@@ -40,7 +40,7 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 - **Frontend:** Flask + HTML/CSS + JavaScript
 - **Backend:** Python (Flask)
-- **LLM:** Amazon Bedrock (Claude 3 Haiku)
+- **LLM:** Amazon Bedrock (Claude 3.5 Sonnet - agentic with tool use)
 - **Embeddings:** Amazon Titan Embeddings
 - **Vector Storage:** S3 + NumPy cosine similarity
 - **Infrastructure:** CloudFormation

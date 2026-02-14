@@ -2,18 +2,7 @@
 
 Complete guide to deploy the AI Cooking Assistant to AWS.
 
-## Prerequisites
-
-1. **AWS Account** with appropriate permissions
-2. **AWS CLI** installed and configured
-   ```bash
-   aws configure
-   # Enter: Access Key, Secret Key, Region (ap-southeast-2), Output format (json)
-   ```
-3. **Python 3.9+** installed
-4. **Bedrock Model Access** (see below)
-
-## Quick Deploy (5 minutes)
+## Quick Deploy
 
 ```bash
 # Make scripts executable
@@ -27,16 +16,7 @@ That's it! The script will output your app URL.
 
 ## Step-by-Step Deployment
 
-### Step 1: Enable Bedrock Models
-
-1. Go to AWS Console → Bedrock → Model access
-2. Click "Manage model access"
-3. Enable:
-   - **Claude 3 Haiku** (for chat)
-   - **Titan Embeddings V2** (for RAG)
-4. Wait for "Access granted" status (~2 minutes)
-
-### Step 2: Configure AWS Region
+### Step 1: Configure AWS Region
 
 ```bash
 # Set your preferred region
@@ -48,7 +28,7 @@ aws bedrock list-foundation-models --region $AWS_REGION
 
 **Region:** ap-southeast-2 (Sydney)
 
-### Step 3: Deploy Infrastructure
+### Step 2: Deploy Infrastructure
 
 ```bash
 ./scripts/deploy.sh
@@ -67,7 +47,7 @@ This script will:
 🌐 Your app: https://xxxxx.execute-api.ap-southeast-2.amazonaws.com/prod
 ```
 
-### Step 4: Test Your Deployment
+### Step 3: Test Your Deployment
 
 ```bash
 # Get your API endpoint
@@ -85,7 +65,7 @@ curl -X POST $API_ENDPOINT/chat \
   -d '{"query": "suggest a healthy breakfast"}'
 ```
 
-### Step 5: Index Recipes (Optional)
+### Step 4: Index Recipes (Optional)
 
 ```bash
 # Set environment variables
@@ -108,7 +88,7 @@ User Browser
 API Gateway (HTTPS)
     ↓
 Lambda Function (Python 3.11)
-    ├── Bedrock (Claude 3 Haiku) - Chat responses
+    ├── Bedrock (Claude 3.5 Sonnet) - Agentic chat with tool use
     ├── Bedrock (Titan V2) - Embeddings
     └── S3 Bucket
         ├── users/ - User data (JSON)
@@ -235,7 +215,9 @@ aws s3 ls s3://$RECIPES_BUCKET/users/
 
 ### Issue: "Access Denied" for Bedrock
 
-**Solution:** Enable model access in Bedrock console (see Step 1)
+**Solution:** Enable model access in Bedrock console:
+1. Go to AWS Console → Bedrock → Model access
+2. Enable Claude 3.5 Sonnet and Titan Embeddings V2
 
 ### Issue: Lambda timeout
 

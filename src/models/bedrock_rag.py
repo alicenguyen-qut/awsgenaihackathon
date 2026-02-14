@@ -86,7 +86,7 @@ User Question: {query}
 Please provide a helpful, detailed response with specific recipe recommendations."""
             
             response = self.bedrock_runtime.invoke_model(
-                modelId='anthropic.claude-3-haiku-20240307-v1:0',
+                modelId='anthropic.claude-3-5-sonnet-20241022-v2:0',
                 body=json.dumps({
                     "anthropic_version": "bedrock-2023-05-31",
                     "max_tokens": 2000,

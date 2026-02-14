@@ -3,7 +3,8 @@
 ## 🍳 Core Features
 
 ### 1. AI-Powered Chat
-- RAG-based responses using Amazon Bedrock (Claude 3 Haiku)
+- RAG-based responses using Amazon Bedrock (Claude 3.5 Sonnet)
+- Agentic capabilities with tool use for multi-step workflows
 - Semantic recipe search with Titan Embeddings
 - Multi-chat management
 - Document upload (.txt, .docx, .pdf)
