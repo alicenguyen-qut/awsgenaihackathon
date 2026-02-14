@@ -60,3 +60,4 @@ uploads/
 *.lock
 .env
 data/
+local/
