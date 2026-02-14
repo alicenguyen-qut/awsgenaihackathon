@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Personal Cooking Assistant - EC2 Deployment (Cost Optimized)'
+Description: 'Personal Cooking Assistant - Elastic Beanstalk Deployment'
 
 Parameters:
   S3BucketName:
@@ -24,36 +24,49 @@ Resources:
           - Id: DeleteOldVersions
             Status: Enabled
             NoncurrentVersionExpirationInDays: 30
-      CorsConfiguration:
-        CorsRules:
-          - AllowedOrigins: ['*']
-            AllowedMethods: [GET, PUT, POST, DELETE]
-            AllowedHeaders: ['*']
 
-  # Security Group
-  WebSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  # Elastic Beanstalk Application
+  Application:
+    Type: AWS::ElasticBeanstalk::Application
     Properties:
-      GroupDescription: Security group for cooking assistant web server
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
+      ApplicationName: cooking-assistant
+      Description: Personal Cooking Assistant with AI
 
-  # IAM Role for EC2
-  EC2Role:
+  # Elastic Beanstalk Environment
+  Environment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref Application
+      EnvironmentName: cooking-assistant-env
+      SolutionStackName: "64bit Amazon Linux 2023 v4.0.0 running Python 3.11"
+      OptionSettings:
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: SingleInstance
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: t3.micro
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: USE_AWS
+          Value: "true"
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: AWS_REGION
+          Value: !Ref AWS::Region
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: S3_BUCKET
+          Value: !Ref S3BucketName
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: RECIPES_BUCKET
+          Value: !Ref S3BucketName
+
+  # IAM Role for EC2 instances
+  InstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CookingAssistantEC2Role
+      RoleName: CookingAssistantEBRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -61,6 +74,8 @@ Resources:
             Principal:
               Service: ec2.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
       Policies:
         - PolicyName: CookingAssistantPermissions
           PolicyDocument:
@@ -82,115 +97,30 @@ Resources:
                 Resource: '*'
 
   # Instance Profile
-  EC2InstanceProfile:
+  InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles:
-        - !Ref EC2Role
-
-  # EC2 Instance
-  WebServer:
-    Type: AWS::EC2::Instance
-    Properties:
-      ImageId: ami-001f2488b35ca8aad  # Ubuntu 22.04 LTS (ap-southeast-2)
-      InstanceType: t3.micro
-      SecurityGroupIds:
-        - !Ref WebSecurityGroup
-      IamInstanceProfile: !Ref EC2InstanceProfile
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          apt-get update -y
-          apt-get install -y python3 python3-pip git nginx
-          
-          # Clone repository
-          cd /home/ubuntu
-          git clone https://github.com/alicenguyen-qut/awsgenaihackathon.git
-          cd awsgenaihackathon
-          
-          # Install Python dependencies
-          pip3 install -r requirements.txt
-          
-          # Set environment variables
-          echo "USE_AWS=true" >> /etc/environment
-          echo "AWS_REGION=${AWS::Region}" >> /etc/environment
-          echo "RECIPES_BUCKET=${S3BucketName}" >> /etc/environment
-          echo "S3_BUCKET=${S3BucketName}" >> /etc/environment
-          
-          # Index recipes to S3
-          export USE_AWS=true
-          export AWS_REGION=${AWS::Region}
-          export RECIPES_BUCKET=${S3BucketName}
-          export S3_BUCKET=${S3BucketName}
-          python3 scripts/index_recipes.py
-          
-          # Create systemd service
-          cat > /etc/systemd/system/cooking-assistant.service << EOF
-          [Unit]
-          Description=Cooking Assistant Flask App
-          After=network.target
-          
-          [Service]
-          Type=simple
-          User=ubuntu
-          WorkingDirectory=/home/ubuntu/awsgenaihackathon
-          Environment=USE_AWS=true
-          Environment=AWS_REGION=${AWS::Region}
-          Environment=RECIPES_BUCKET=${S3BucketName}
-          Environment=S3_BUCKET=${S3BucketName}
-          ExecStart=/usr/bin/python3 src/app.py
-          Restart=always
-          
-          [Install]
-          WantedBy=multi-user.target
-          EOF
-          
-          # Configure nginx
-          cat > /etc/nginx/sites-available/cooking-assistant << EOF
-          server {
-              listen 80;
-              server_name _;
-              
-              location / {
-                  proxy_pass http://127.0.0.1:5000;
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-              }
-          }
-          EOF
-          
-          ln -s /etc/nginx/sites-available/cooking-assistant /etc/nginx/sites-enabled/
-          rm -f /etc/nginx/sites-enabled/default
-          
-          # Start services
-          systemctl enable cooking-assistant
-          systemctl start cooking-assistant
-          systemctl restart nginx
-
-      Tags:
-        - Key: Name
-          Value: CookingAssistant
+        - !Ref InstanceRole
 
 Outputs:
-  InstanceId:
-    Description: EC2 Instance ID
-    Value: !Ref WebServer
+  ApplicationName:
+    Description: Elastic Beanstalk Application Name
+    Value: !Ref Application
     Export:
-      Name: !Sub '${AWS::StackName}-InstanceId'
+      Name: !Sub '${AWS::StackName}-AppName'
   
-  PublicIP:
-    Description: Public IP address
-    Value: !GetAtt WebServer.PublicIp
+  EnvironmentName:
+    Description: Elastic Beanstalk Environment Name
+    Value: !Ref Environment
     Export:
-      Name: !Sub '${AWS::StackName}-PublicIP'
+      Name: !Sub '${AWS::StackName}-EnvName'
   
-  WebsiteURL:
-    Description: Website URL
-    Value: !Sub 'http://${WebServer.PublicIp}'
+  EnvironmentURL:
+    Description: Application URL
+    Value: !GetAtt Environment.EndpointURL
     Export:
-      Name: !Sub '${AWS::StackName}-WebsiteURL'
+      Name: !Sub '${AWS::StackName}-URL'
   
   S3Bucket:
     Description: S3 bucket for user data

@@ -53,8 +53,10 @@ User → Flask UI → EC2 Instance → Bedrock (Claude + Titan)
 
 ### Prerequisites
 - Python 3.9+
-- pip/uv  (Python package manager)
+- pip/uv (Python package manager)
 - make CLI
+- AWS CLI (for deployment)
+- EB CLI (for Elastic Beanstalk): `pip install awsebcli`
 
 ### Installation
 
@@ -76,22 +78,33 @@ make run
 
 The app will start in **LOCAL MODE** by default, using mock data and file-based storage.
 
-### Running with AWS
+### Running with AWS (Elastic Beanstalk)
 
-Copy `.env.example` to `.env` and configure:
-
-```bash
-cp .env.example .env
-# Edit .env and set:
-# USE_AWS=true
-# S3_BUCKET=your-bucket-name
-```
-
-Then run:
+**Much simpler than EC2!**
 
 ```bash
-make run
+# 1. Install EB CLI
+pip install awsebcli
+
+# 2. Clean up old EC2 deployment (if exists)
+chmod +x scripts/cleanup.sh
+./scripts/cleanup.sh
+
+# 3. Deploy to Elastic Beanstalk
+chmod +x scripts/deploy_eb.sh
+./scripts/deploy_eb.sh
+
+# 4. Get your URL
+eb status
+
+# View logs
+eb logs
+
+# Cleanup when done
+./scripts/cleanup_eb.sh
 ```
+
+**That's it!** No SSH, no systemd, no nginx config needed.
 
 ## Project Structure
 

@@ -9,52 +9,48 @@ echo ""
 
 # Configuration
 REGION="ap-southeast-2"
-STACK_NAMES=("cooking-assistant-ec2-stack" "cooking-assistant-stack")
+STACK_NAME="cooking-assistant-stack"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+BUCKET_NAME="cooking-assistant-data-${ACCOUNT_ID}"
 
 echo "Checking existing resources..."
 
-# Find which stack exists
-STACK_NAME=""
-for name in "${STACK_NAMES[@]}"; do
-    if aws cloudformation describe-stacks --stack-name "$name" --region $REGION &>/dev/null; then
-        STACK_NAME="$name"
-        echo "✅ Found stack: $STACK_NAME"
-        break
-    fi
-done
-
-if [ -z "$STACK_NAME" ]; then
-    echo "❌ No CloudFormation stack found"
-    echo ""
-    echo "Checking for orphaned resources..."
+# Check if stack exists
+if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region $REGION &>/dev/null; then
+    echo "✅ Found stack: $STACK_NAME"
     
-    # Check for S3 buckets
-    BUCKETS=$(aws s3 ls | grep -E "cooking-assistant-data|app-data-bucket" | awk '{print $3}' || echo "")
-    if [ -n "$BUCKETS" ]; then
-        echo "Found S3 buckets:"
-        echo "$BUCKETS"
-    fi
+    # Get outputs
+    APP_NAME=$(aws cloudformation describe-stacks \
+      --stack-name $STACK_NAME \
+      --region $REGION \
+      --query 'Stacks[0].Outputs[?OutputKey==`ApplicationName`].OutputValue' \
+      --output text 2>/dev/null || echo "")
     
-    # Check for EC2 instances
-    INSTANCES=$(aws ec2 describe-instances --region $REGION --filters "Name=tag:Name,Values=CookingAssistant" "Name=instance-state-name,Values=running,stopped" --query 'Reservations[*].Instances[*].InstanceId' --output text)
-    if [ -n "$INSTANCES" ]; then
-        echo "Found EC2 instances: $INSTANCES"
-    fi
+    ENV_NAME=$(aws cloudformation describe-stacks \
+      --stack-name $STACK_NAME \
+      --region $REGION \
+      --query 'Stacks[0].Outputs[?OutputKey==`EnvironmentName`].OutputValue' \
+      --output text 2>/dev/null || echo "")
     
-    if [ -z "$BUCKETS" ] && [ -z "$INSTANCES" ]; then
-        echo "No resources found to clean up."
-        exit 0
-    fi
-else
-    # Get S3 bucket name from stack
     S3_BUCKET=$(aws cloudformation describe-stacks \
       --stack-name $STACK_NAME \
       --region $REGION \
       --query 'Stacks[0].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
       --output text 2>/dev/null || echo "")
     
-    if [ -n "$S3_BUCKET" ]; then
-        echo "✅ Found S3 bucket: $S3_BUCKET"
+    [ -n "$APP_NAME" ] && echo "✅ Found Elastic Beanstalk app: $APP_NAME"
+    [ -n "$ENV_NAME" ] && echo "✅ Found environment: $ENV_NAME"
+    [ -n "$S3_BUCKET" ] && echo "✅ Found S3 bucket: $S3_BUCKET"
+else
+    echo "❌ No CloudFormation stack found"
+    echo "Checking for orphaned resources..."
+    
+    S3_BUCKET=$(aws s3 ls | grep "cooking-assistant-data" | awk '{print $3}' | head -1 || echo "")
+    [ -n "$S3_BUCKET" ] && echo "Found S3 bucket: $S3_BUCKET"
+    
+    if [ -z "$S3_BUCKET" ]; then
+        echo "No resources found to clean up."
+        exit 0
     fi
 fi
 
@@ -70,61 +66,59 @@ fi
 
 echo ""
 
-# Delete S3 bucket contents first (required before stack deletion)
+# Terminate Elastic Beanstalk environment
+if [ -n "$ENV_NAME" ]; then
+    echo "Terminating Elastic Beanstalk environment: $ENV_NAME"
+    aws elasticbeanstalk terminate-environment \
+      --environment-name $ENV_NAME \
+      --region $REGION 2>/dev/null || echo "⚠️  Environment not found"
+    
+    echo "Waiting for environment termination (this may take 3-5 minutes)..."
+    aws elasticbeanstalk wait environment-terminated \
+      --environment-names $ENV_NAME \
+      --region $REGION 2>/dev/null || true
+    
+    echo "✅ Environment terminated"
+    echo ""
+fi
+
+# Delete S3 bucket contents
 if [ -n "$S3_BUCKET" ]; then
     echo "Emptying S3 bucket: $S3_BUCKET"
-    aws s3 rm s3://$S3_BUCKET --recursive --region $REGION 2>/dev/null && echo "✅ S3 bucket emptied" || echo "⚠️  S3 bucket already empty or not found"
+    aws s3 rm s3://$S3_BUCKET --recursive --region $REGION 2>/dev/null && echo "✅ S3 bucket emptied" || echo "⚠️  S3 bucket already empty"
     echo ""
 fi
 
 # Delete CloudFormation stack
-if [ -n "$STACK_NAME" ]; then
+if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region $REGION &>/dev/null; then
     echo "Deleting CloudFormation stack: $STACK_NAME"
     aws cloudformation delete-stack --stack-name $STACK_NAME --region $REGION
     
-    echo "Waiting for stack deletion (this may take 2-3 minutes)..."
+    echo "Waiting for stack deletion..."
     aws cloudformation wait stack-delete-complete --stack-name $STACK_NAME --region $REGION 2>/dev/null || true
     
     echo "✅ CloudFormation stack deleted"
     echo ""
 fi
 
-# Clean up orphaned S3 buckets (if any)
+# Clean up orphaned S3 buckets
 echo "Checking for orphaned S3 buckets..."
-ORPHANED_BUCKETS=$(aws s3 ls | grep -E "cooking-assistant-data|app-data-bucket" | awk '{print $3}' || echo "")
+ORPHANED_BUCKETS=$(aws s3 ls | grep "cooking-assistant-data" | awk '{print $3}' || echo "")
 if [ -n "$ORPHANED_BUCKETS" ]; then
-    echo "Found orphaned buckets:"
     for BUCKET in $ORPHANED_BUCKETS; do
-        echo "  - $BUCKET"
+        echo "Deleting bucket: $BUCKET"
         aws s3 rm s3://$BUCKET --recursive --region $REGION 2>/dev/null || true
-        aws s3 rb s3://$BUCKET --region $REGION 2>/dev/null && echo "    ✅ Deleted" || echo "    ⚠️  Could not delete"
+        aws s3 rb s3://$BUCKET --region $REGION 2>/dev/null && echo "  ✅ Deleted" || echo "  ⚠️  Could not delete"
     done
 else
-    echo "✅ No orphaned S3 buckets found"
+    echo "✅ No orphaned buckets found"
 fi
-echo ""
-
-# Terminate orphaned EC2 instances
-echo "Checking for orphaned EC2 instances..."
-ORPHANED_INSTANCES=$(aws ec2 describe-instances --region $REGION --filters "Name=tag:Name,Values=CookingAssistant" "Name=instance-state-name,Values=running,stopped" --query 'Reservations[*].Instances[*].InstanceId' --output text)
-if [ -n "$ORPHANED_INSTANCES" ]; then
-    echo "Found orphaned instances: $ORPHANED_INSTANCES"
-    aws ec2 terminate-instances --instance-ids $ORPHANED_INSTANCES --region $REGION
-    echo "✅ Instances terminated"
-else
-    echo "✅ No orphaned instances found"
-fi
-echo ""
-
-# Delete EC2 key pair
-echo "Deleting EC2 key pair..."
-aws ec2 delete-key-pair --key-name cooking-assistant-key --region $REGION 2>/dev/null && echo "✅ Key pair deleted" || echo "⚠️  Key pair not found"
 echo ""
 
 # Clean up local files
 echo "Cleaning up local files..."
-rm -f cooking-assistant-key.pem
-echo "✅ Local key files cleaned up"
+rm -f app-*.zip
+echo "✅ Local files cleaned up"
 
 echo ""
 echo "=========================================="
@@ -133,11 +127,10 @@ echo "=========================================="
 echo ""
 echo "✅ All AWS resources deleted:"
 echo "   - CloudFormation stack"
-echo "   - EC2 instance"
+echo "   - Elastic Beanstalk application"
+echo "   - Elastic Beanstalk environment"
 echo "   - S3 bucket (all data)"
-echo "   - Security groups"
 echo "   - IAM roles"
-echo "   - EC2 key pair"
 echo ""
 echo "💰 You will no longer be charged for these resources."
 echo ""

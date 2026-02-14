@@ -12,6 +12,7 @@ REGION="ap-southeast-2"
 STACK_NAME="cooking-assistant-stack"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 BUCKET_NAME="cooking-assistant-data-${ACCOUNT_ID}"
+APP_VERSION="v$(date +%s)"
 
 echo "Region: $REGION"
 echo "Stack: $STACK_NAME"
@@ -32,48 +33,24 @@ echo ""
 echo "✅ CloudFormation deployment complete!"
 echo ""
 
-# Wait for instance to be running
-echo "Waiting for EC2 instance to be ready..."
-INSTANCE_ID=$(aws cloudformation describe-stacks \
-  --stack-name $STACK_NAME \
-  --region $REGION \
-  --query 'Stacks[0].Outputs[?OutputKey==`InstanceId`].OutputValue' \
-  --output text)
-
-aws ec2 wait instance-running --instance-ids $INSTANCE_ID --region $REGION
-echo "✅ Instance is running"
-echo ""
-
 # Get outputs
 echo "Getting deployment details..."
-INSTANCE_ID=$(aws cloudformation describe-stacks \
+APP_NAME=$(aws cloudformation describe-stacks \
   --stack-name $STACK_NAME \
   --region $REGION \
-  --query 'Stacks[0].Outputs[?OutputKey==`InstanceId`].OutputValue' \
+  --query 'Stacks[0].Outputs[?OutputKey==`ApplicationName`].OutputValue' \
   --output text)
 
-PUBLIC_IP=$(aws cloudformation describe-stacks \
+ENV_NAME=$(aws cloudformation describe-stacks \
   --stack-name $STACK_NAME \
   --region $REGION \
-  --query 'Stacks[0].Outputs[?OutputKey==`PublicIP`].OutputValue' \
-  --output text)
-
-WEBSITE_URL=$(aws cloudformation describe-stacks \
-  --stack-name $STACK_NAME \
-  --region $REGION \
-  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteURL`].OutputValue' \
+  --query 'Stacks[0].Outputs[?OutputKey==`EnvironmentName`].OutputValue' \
   --output text)
 
 S3_BUCKET=$(aws cloudformation describe-stacks \
   --stack-name $STACK_NAME \
   --region $REGION \
   --query 'Stacks[0].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
-  --output text)
-
-SSH_COMMAND=$(aws cloudformation describe-stacks \
-  --stack-name $STACK_NAME \
-  --region $REGION \
-  --query 'Stacks[0].Outputs[?OutputKey==`SSHCommand`].OutputValue' \
   --output text)
 
 # Index recipes to S3
@@ -85,31 +62,75 @@ python3 scripts/index_recipes.py
 echo "✅ Recipes indexed to S3"
 echo ""
 
+# Create application bundle
+echo "Creating application bundle..."
+zip -r app-${APP_VERSION}.zip . \
+  -x "*.git*" "sessions/*" "uploads/*" "*.pyc" "__pycache__/*" "*.DS_Store" "app-*.zip" \
+  > /dev/null
+echo "✅ Application bundle created"
+echo ""
+
+# Upload to S3
+echo "Uploading application to S3..."
+S3_KEY="versions/app-${APP_VERSION}.zip"
+aws s3 cp app-${APP_VERSION}.zip s3://${S3_BUCKET}/${S3_KEY} --region $REGION
+echo "✅ Application uploaded"
+echo ""
+
+# Create application version
+echo "Creating Elastic Beanstalk application version..."
+aws elasticbeanstalk create-application-version \
+  --application-name $APP_NAME \
+  --version-label $APP_VERSION \
+  --source-bundle S3Bucket="${S3_BUCKET}",S3Key="${S3_KEY}" \
+  --region $REGION
+echo "✅ Application version created"
+echo ""
+
+# Deploy to environment
+echo "Deploying to Elastic Beanstalk environment..."
+aws elasticbeanstalk update-environment \
+  --application-name $APP_NAME \
+  --environment-name $ENV_NAME \
+  --version-label $APP_VERSION \
+  --region $REGION
+echo "✅ Deployment initiated"
+echo ""
+
+# Wait for environment to be ready
+echo "Waiting for environment to be ready (this may take 3-5 minutes)..."
+aws elasticbeanstalk wait environment-updated \
+  --application-name $APP_NAME \
+  --environment-names $ENV_NAME \
+  --region $REGION
+
+# Get URL
+URL=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`EnvironmentURL`].OutputValue' \
+  --output text)
+
+# Cleanup local zip
+rm -f app-${APP_VERSION}.zip
+
 echo ""
 echo "==========================================="
 echo "  Deployment Complete!"
 echo "==========================================="
 echo ""
-echo "🎉 Your app will be available at:"
-echo "   $WEBSITE_URL"
+echo "🎉 Your app is available at:"
+echo "   http://$URL"
 echo ""
 echo "📊 Resources created:"
 echo "   - CloudFormation stack: $STACK_NAME"
-echo "   - EC2 instance: $INSTANCE_ID"
-echo "   - Public IP: $PUBLIC_IP"
+echo "   - Elastic Beanstalk app: $APP_NAME"
+echo "   - Environment: $ENV_NAME"
 echo "   - S3 bucket: $S3_BUCKET"
-echo "     • Recipe embeddings: s3://$S3_BUCKET/embeddings/"
-echo "     • Recipe texts: s3://$S3_BUCKET/recipes/"
-echo "     • User sessions: s3://$S3_BUCKET/sessions/"
-echo "     • User uploads: s3://$S3_BUCKET/uploads/"
 echo ""
-echo "🔧 SSH access:"
-echo "   $SSH_COMMAND"
-echo ""
-echo "📊 Monitor your instance:"
-echo "   https://console.aws.amazon.com/ec2/home?region=$REGION#Instances:"
+echo "🔧 Useful commands:"
+echo "   View logs: aws elasticbeanstalk retrieve-environment-info --environment-name $ENV_NAME --info-type tail --region $REGION"
+echo "   Monitor: https://console.aws.amazon.com/elasticbeanstalk/home?region=$REGION#/environment/dashboard?applicationName=$APP_NAME&environmentId=$ENV_NAME"
 echo ""
 echo "💰 Estimated cost: ~\$8-12/month"
-echo ""
-echo "⏳ Note: Instance is starting up, app may take 2-3 minutes to be ready"
 echo ""
