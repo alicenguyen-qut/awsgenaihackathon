@@ -100,10 +100,10 @@ async function updateDashboard() {
     const recsEl = document.getElementById('recommendations');
     if (recsEl && recs.recommendations) {
         recsEl.innerHTML = recs.recommendations.length === 0 
-            ? '<p>Great job! You\'re on track today.</p>'
+            ? '<p style="text-align: center; color: #718096; padding: 20px;">🎉 Great job! You\'re on track today.</p>'
             : recs.recommendations.map(r => r.type === 'meal' 
-                ? `<div class="rec-card"><strong>${r.title}</strong> (${r.calories} cal, ${r.protein}g protein)<br><small>${r.reason}</small></div>`
-                : `<div class="rec-tip">${r.message}</div>`
+                ? `<div class="rec-card" style="background: white; border: 2px solid rgba(116, 185, 255, 0.3); padding: 16px; border-radius: 12px; margin-bottom: 12px; transition: all 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(116, 185, 255, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"><div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;"><strong style="color: #2d3748; font-size: 16px;">${r.title}</strong><span style="background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;">${r.calories} cal</span></div><div style="color: #718096; font-size: 13px; margin-bottom: 8px;">${r.reason}</div><div style="color: #74b9ff; font-size: 12px; font-weight: 600;">💪 ${r.protein}g protein</div></div>`
+                : `<div class="rec-tip" style="background: linear-gradient(135deg, #ffeaa7 0%, #ffd89b 100%); padding: 14px 16px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; color: #2d3748; font-weight: 500; box-shadow: 0 2px 8px rgba(255, 234, 167, 0.3);">${r.message}</div>`
             ).join('');
     }
 }
