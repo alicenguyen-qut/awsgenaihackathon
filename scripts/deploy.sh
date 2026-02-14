@@ -53,13 +53,16 @@ S3_BUCKET=$(aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
   --output text)
 
-# Index recipes to S3
+# Index recipes to S3 (optional - skip if dependencies missing)
 echo "Indexing recipes to S3..."
 export AWS_REGION=$REGION
 export RECIPES_BUCKET=$S3_BUCKET
 export S3_BUCKET=$S3_BUCKET
-python3 scripts/index_recipes.py
-echo "✅ Recipes indexed to S3"
+if python3 scripts/index_recipes.py 2>/dev/null; then
+  echo "✅ Recipes indexed to S3"
+else
+  echo "⚠️  Recipe indexing skipped (run manually later if needed)"
+fi
 echo ""
 
 # Create application bundle
@@ -73,7 +76,7 @@ echo ""
 # Upload to S3
 echo "Uploading application to S3..."
 S3_KEY="versions/app-${APP_VERSION}.zip"
-aws s3 cp app-${APP_VERSION}.zip s3://${S3_BUCKET}/${S3_KEY} --region $REGION
+aws s3 cp app-${APP_VERSION}.zip s3://${S3_BUCKET}/${S3_KEY} --region $REGION --no-progress
 echo "✅ Application uploaded"
 echo ""
 
@@ -83,7 +86,8 @@ aws elasticbeanstalk create-application-version \
   --application-name $APP_NAME \
   --version-label $APP_VERSION \
   --source-bundle S3Bucket="${S3_BUCKET}",S3Key="${S3_KEY}" \
-  --region $REGION
+  --region $REGION \
+  > /dev/null
 echo "✅ Application version created"
 echo ""
 
@@ -93,7 +97,8 @@ aws elasticbeanstalk update-environment \
   --application-name $APP_NAME \
   --environment-name $ENV_NAME \
   --version-label $APP_VERSION \
-  --region $REGION
+  --region $REGION \
+  > /dev/null
 echo "✅ Deployment initiated"
 echo ""
 
@@ -129,7 +134,7 @@ echo "   - Environment: $ENV_NAME"
 echo "   - S3 bucket: $S3_BUCKET"
 echo ""
 echo "🔧 Useful commands:"
-echo "   View logs: aws elasticbeanstalk retrieve-environment-info --environment-name $ENV_NAME --info-type tail --region $REGION"
+echo "   View logs: aws elasticbeanstalk request-environment-info --environment-name $ENV_NAME --info-type tail --region $REGION"
 echo "   Monitor: https://console.aws.amazon.com/elasticbeanstalk/home?region=$REGION#/environment/dashboard?applicationName=$APP_NAME&environmentId=$ENV_NAME"
 echo ""
 echo "💰 Estimated cost: ~\$8-12/month"
