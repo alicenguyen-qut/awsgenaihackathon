@@ -29,8 +29,9 @@ async function loadAgentContext() {
 }
 
 // Detect user intent and extract actions
-function detectIntent(message) {
+function detectIntent(message, aiResponse = '') {
     const msg = message.toLowerCase();
+    const response = aiResponse.toLowerCase();
     const intents = [];
     
     // Multi-step planning intent
@@ -38,8 +39,9 @@ function detectIntent(message) {
         intents.push({type: 'PLAN_WEEK', confidence: 0.9});
     }
     
-    // Shopping list generation
-    if (msg.includes('shopping list') || msg.includes('grocery list') || msg.includes('what do i need to buy')) {
+    // Shopping list generation - only if AI didn't already handle it
+    if ((msg.includes('shopping list') || msg.includes('grocery list') || msg.includes('what do i need to buy')) &&
+        !response.includes('shopping list now includes') && !response.includes('added') && !response.includes('items to')) {
         intents.push({type: 'GENERATE_SHOPPING_LIST', confidence: 0.85});
     }
     
@@ -64,7 +66,7 @@ function detectIntent(message) {
 
 // Execute autonomous actions
 async function executeAgentActions(message, response) {
-    const intents = detectIntent(message);
+    const intents = detectIntent(message, response);
     const actions = [];
     
     for (const intent of intents) {
