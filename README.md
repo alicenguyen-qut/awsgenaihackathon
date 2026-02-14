@@ -5,7 +5,7 @@ Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) wit
 ## Architecture
 
 ```
-User → Flask UI → EC2 Instance → Bedrock (Claude + Titan)
+User → Flask UI → Elastic Beanstalk → Bedrock (Claude + Titan)
                       ↓
                   S3 Bucket
                   ├── embeddings/    (Recipe embeddings)
@@ -14,7 +14,7 @@ User → Flask UI → EC2 Instance → Bedrock (Claude + Titan)
                   └── uploads/       (User-uploaded files)
 ```
 
-**Cost-Optimized:** Uses EC2 t3.micro + S3 Vector + in-memory vector search
+**Cost-Optimized:** Uses Elastic Beanstalk t3.micro + S3 + in-memory vector search
 
 ## Key Features
 
@@ -44,7 +44,7 @@ User → Flask UI → EC2 Instance → Bedrock (Claude + Titan)
 
 - **Frontend:** Flask + HTML/CSS + JavaScript
 - **Backend:** Python (Flask)
-- **Infrastructure:** EC2 t3.micro + CloudFormation
+- **Infrastructure:** Elastic Beanstalk + CloudFormation
 - **LLM:** Amazon Bedrock 
 - **Embeddings:** Amazon Titan Embeddings
 - **S3 Vector:** S3 + NumPy cosine similarity
@@ -53,10 +53,9 @@ User → Flask UI → EC2 Instance → Bedrock (Claude + Titan)
 
 ### Prerequisites
 - Python 3.9+
-- pip/uv (Python package manager)
-- make CLI
+- pip (Python package manager)
 - AWS CLI (for deployment)
-- EB CLI (for Elastic Beanstalk): `pip install awsebcli`
+- make CLI (optional)
 
 ### Installation
 
@@ -80,31 +79,19 @@ The app will start in **LOCAL MODE** by default, using mock data and file-based 
 
 ### Running with AWS (Elastic Beanstalk)
 
-**Much simpler than EC2!**
-
 ```bash
-# 1. Install EB CLI
-pip install awsebcli
+# 1. Deploy to AWS
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
 
-# 2. Clean up old EC2 deployment (if exists)
+# 2. Get your URL from the output
+
+# 3. Cleanup when done
 chmod +x scripts/cleanup.sh
 ./scripts/cleanup.sh
-
-# 3. Deploy to Elastic Beanstalk
-chmod +x scripts/deploy_eb.sh
-./scripts/deploy_eb.sh
-
-# 4. Get your URL
-eb status
-
-# View logs
-eb logs
-
-# Cleanup when done
-./scripts/cleanup_eb.sh
 ```
 
-**That's it!** No SSH, no systemd, no nginx config needed.
+**That's it!** CloudFormation handles everything - no manual setup needed.
 
 ## Project Structure
 
@@ -114,9 +101,9 @@ awsgenaihackathon/
 │   ├── nutrition_guidelines.txt
 │   └── recipe_*.txt
 ├── infrastructure/                # CloudFormation templates
-│   └── cloudformation.yaml       # EC2 deployment template
+│   └── cloudformation.yaml       # Elastic Beanstalk deployment
 ├── scripts/                       # Deployment scripts
-│   ├── deploy.sh                 # EC2 deployment
+│   ├── deploy.sh                 # Single deployment script
 │   ├── cleanup.sh                # Delete all AWS resources
 │   └── index_recipes.py          # Recipe indexing (Titan V2)
 ├── src/
@@ -141,6 +128,7 @@ awsgenaihackathon/
 │           └── index.html       # Main UI template
 ├── sessions/                      # Local user session data (gitignored)
 ├── uploads/                       # Local uploaded files (gitignored)
+├── Procfile                       # Elastic Beanstalk process config
 ├── .env                           # Environment variables (gitignored)
 ├── .env.example                   # Environment variables template
 ├── .gitignore
