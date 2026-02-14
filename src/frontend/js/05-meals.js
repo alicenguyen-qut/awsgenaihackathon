@@ -351,12 +351,34 @@ async function deleteShoppingItem(index) {
 }
 
 async function clearShoppingList() {
-    if (confirm('Clear all items?')) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2000;';
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 32px; border-radius: 24px; max-width: 400px; width: 90%; box-shadow: 0 25px 60px rgba(0,0,0,0.4); text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+            <h2 style="font-size: 24px; font-weight: 700; color: #2d3748; margin-bottom: 12px;">Clear Shopping List?</h2>
+            <p style="color: #718096; margin-bottom: 24px; line-height: 1.6;">This will permanently delete all items from your shopping list. This action cannot be undone.</p>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="this.closest('div').parentElement.parentElement.remove()" 
+                    style="flex: 1; padding: 12px; background: #e2e8f0; color: #2d3748; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button id="confirmClearBtn" 
+                    style="flex: 1; padding: 12px; background: #fab1a0; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;">Clear All</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('confirmClearBtn').onclick = async () => {
+        modal.remove();
         try {
             await fetch('/api/shopping-list/clear', {method: 'POST'});
             loadShoppingList();
+            showAlert('Shopping list cleared', 'success');
         } catch (error) {
             console.error('Clear list error:', error);
+            showAlert('Failed to clear list', 'error');
         }
-    }
+    };
 }

@@ -1,37 +1,72 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AI Cooking Assistant - Complete Infrastructure'
+Description: 'Personal Cooking Assistant - EC2 Deployment (Cost Optimized)'
 
 Parameters:
-  ProjectName:
+  S3BucketName:
     Type: String
-    Default: cooking-assistant
+    Description: S3 bucket name for user data storage
+    Default: !Sub 'cooking-assistant-data-${AWS::AccountId}'
 
 Resources:
-  RecipesBucket:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
+  # EC2 Key Pair
+  CookingAssistantKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: cooking-assistant-key
+      KeyType: rsa
+      KeyFormat: pem
 
-  LambdaRole:
+  # S3 Bucket for user data
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+
+  # Security Group
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for cooking assistant web server
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  # IAM Role for EC2
+  EC2Role:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: CookingAssistantEC2Role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              Service: lambda.amazonaws.com
+              Service: ec2.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: BedrockAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: bedrock:InvokeModel
-                Resource: '*'
-        - PolicyName: S3Access
+        - PolicyName: CookingAssistantPermissions
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -39,72 +74,138 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
+                  - s3:DeleteObject
                   - s3:ListBucket
                 Resource:
-                  - !GetAtt RecipesBucket.Arn
-                  - !Sub '${RecipesBucket.Arn}/*'
+                  - !GetAtt DataBucket.Arn
+                  - !Sub '${DataBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: '*'
 
-  ChatbotLambda:
-    Type: AWS::Lambda::Function
+  # Instance Profile
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
     Properties:
-      FunctionName: !Sub '${ProjectName}-chatbot'
-      Runtime: python3.11
-      Handler: lambda_function.lambda_handler
-      Role: !GetAtt LambdaRole.Arn
-      Timeout: 60
-      MemorySize: 512
-      Environment:
-        Variables:
-          RECIPES_BUCKET: !Ref RecipesBucket
-      Code:
-        ZipFile: |
-          def lambda_handler(event, context):
-              return {'statusCode': 200, 'body': 'Deploy code'}
+      Roles:
+        - !Ref EC2Role
 
-  ApiGateway:
-    Type: AWS::ApiGatewayV2::Api
+  # EC2 Instance
+  WebServer:
+    Type: AWS::EC2::Instance
     Properties:
-      Name: !Sub '${ProjectName}-api'
-      ProtocolType: HTTP
-      CorsConfiguration:
-        AllowOrigins: ['*']
-        AllowMethods: [GET, POST, DELETE, OPTIONS]
-        AllowHeaders: ['*']
+      ImageId: ami-0310483fb2b488153  # Amazon Linux 2023 (ap-southeast-2)
+      InstanceType: t3.micro
+      KeyName: !Ref CookingAssistantKeyPair
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y python3 python3-pip git nginx
+          
+          # Clone repository
+          cd /home/ec2-user
+          git clone https://github.com/your-username/awsgenaihackathon.git
+          cd awsgenaihackathon
+          
+          # Install Python dependencies
+          pip3 install -r requirements.txt
+          
+          # Set environment variables
+          echo "USE_AWS=true" >> /etc/environment
+          echo "AWS_REGION=${AWS::Region}" >> /etc/environment
+          echo "RECIPES_BUCKET=${S3BucketName}" >> /etc/environment
+          echo "S3_BUCKET=${S3BucketName}" >> /etc/environment
+          
+          # Create systemd service
+          cat > /etc/systemd/system/cooking-assistant.service << EOF
+          [Unit]
+          Description=Cooking Assistant Flask App
+          After=network.target
+          
+          [Service]
+          Type=simple
+          User=ec2-user
+          WorkingDirectory=/home/ec2-user/awsgenaihackathon
+          Environment=USE_AWS=true
+          Environment=AWS_REGION=${AWS::Region}
+          Environment=RECIPES_BUCKET=${S3BucketName}
+          Environment=S3_BUCKET=${S3BucketName}
+          ExecStart=/usr/bin/python3 src/app.py
+          Restart=always
+          
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          
+          # Configure nginx
+          cat > /etc/nginx/conf.d/cooking-assistant.conf << EOF
+          server {
+              listen 80;
+              server_name _;
+              
+              location / {
+                  proxy_pass http://127.0.0.1:5000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+          EOF
+          
+          # Start services
+          systemctl enable cooking-assistant
+          systemctl start cooking-assistant
+          systemctl enable nginx
+          systemctl start nginx
+          
+          # Index recipes
+          cd /home/ec2-user/awsgenaihackathon
+          python3 scripts/index_recipes.py
 
-  ApiIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref ApiGateway
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt ChatbotLambda.Arn
-      PayloadFormatVersion: '2.0'
-
-  # Catch-all route for all paths
-  ApiRouteCatchAll:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ApiGateway
-      RouteKey: '$default'
-      Target: !Sub 'integrations/${ApiIntegration}'
-
-  ApiStage:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      ApiId: !Ref ApiGateway
-      StageName: prod
-      AutoDeploy: true
-
-  LambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref ChatbotLambda
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
+      Tags:
+        - Key: Name
+          Value: CookingAssistant
 
 Outputs:
-  ApiEndpoint:
-    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod'
-  RecipesBucket:
-    Value: !Ref RecipesBucket
-  LambdaFunction:
-    Value: !Ref ChatbotLambda
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref WebServer
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceId'
+  
+  PublicIP:
+    Description: Public IP address
+    Value: !GetAtt WebServer.PublicIp
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicIP'
+  
+  WebsiteURL:
+    Description: Website URL
+    Value: !Sub 'http://${WebServer.PublicIp}'
+    Export:
+      Name: !Sub '${AWS::StackName}-WebsiteURL'
+  
+  S3Bucket:
+    Description: S3 bucket for user data
+    Value: !Ref DataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-DataBucket'
+  
+  KeyPairName:
+    Description: EC2 Key Pair name
+    Value: !Ref CookingAssistantKeyPair
+    Export:
+      Name: !Sub '${AWS::StackName}-KeyPair'
+  
+  SSHCommand:
+    Description: SSH command to connect to instance
+    Value: !Sub 'ssh -i cooking-assistant-key.pem ec2-user@${WebServer.PublicIp}'
+    Export:
+      Name: !Sub '${AWS::StackName}-SSHCommand'

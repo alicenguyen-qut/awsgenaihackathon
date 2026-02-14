@@ -1,137 +1,100 @@
 #!/bin/bash
 
-# AI Cooking Assistant - Complete AWS Deployment
 set -e
 
-echo "🍳 AI Cooking Assistant - AWS Deployment"
-echo "=========================================="
-
-# Check AWS CLI
-if ! aws sts get-caller-identity > /dev/null 2>&1; then
-    echo "❌ AWS CLI not configured. Run 'aws configure' first."
-    exit 1
-fi
-
-# Set region
-export AWS_REGION=${AWS_REGION:-ap-southeast-2}
-echo "📍 Region: $AWS_REGION"
-
-# Step 1: Deploy infrastructure
+echo "==========================================="
+echo "  EC2 Deployment (Cost Optimized)"
+echo "==========================================="
 echo ""
-echo "Step 1/5: Deploying CloudFormation stack..."
+
+# Configuration
+REGION="ap-southeast-2"
+STACK_NAME="cooking-assistant-ec2-stack"
+BUCKET_NAME="cooking-assistant-data-$(date +%s)"
+
+echo "Region: $REGION"
+echo "Stack: $STACK_NAME"
+echo "S3 Bucket: $BUCKET_NAME"
+echo ""
+
+# Deploy CloudFormation stack
+echo "Deploying CloudFormation stack..."
 aws cloudformation deploy \
-    --template-file infrastructure/cloudformation.yaml \
-    --stack-name cooking-assistant \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --region $AWS_REGION
+  --template-file infrastructure/cloudformation.yaml \
+  --stack-name $STACK_NAME \
+  --parameter-overrides \
+    S3BucketName=$BUCKET_NAME \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --region $REGION
 
-# Step 2: Get outputs
 echo ""
-echo "Step 2/5: Getting stack outputs..."
-export RECIPES_BUCKET=$(aws cloudformation describe-stacks \
-    --stack-name cooking-assistant \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`RecipesBucket`].OutputValue' \
-    --output text 2>/dev/null)
-
-if [ -z "$RECIPES_BUCKET" ]; then
-    echo "   ❌ Failed to get bucket name. Stack may have failed."
-    echo "   Check CloudFormation console for errors."
-    exit 1
-fi
-
-export API_ENDPOINT=$(aws cloudformation describe-stacks \
-    --stack-name cooking-assistant \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
-    --output text)
-
-export LAMBDA_FUNCTION=$(aws cloudformation describe-stacks \
-    --stack-name cooking-assistant \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`LambdaFunction`].OutputValue' \
-    --output text 2>/dev/null)
-
-if [ -z "$LAMBDA_FUNCTION" ]; then
-    echo "   ❌ Failed to get Lambda function name."
-    exit 1
-fi
-
-echo "   S3 Bucket: $RECIPES_BUCKET"
-echo "   API Endpoint: $API_ENDPOINT"
-echo "   Lambda Function: $LAMBDA_FUNCTION"
-
-# Step 3: Package Lambda
+echo "✅ CloudFormation deployment complete!"
 echo ""
-echo "Step 3/5: Packaging Lambda function..."
-cd src
-rm -rf package lambda.zip
-mkdir -p package
 
-# Install dependencies (exclude numpy - use Lambda's built-in)
-pip install -q --index-url https://pypi.org/simple -r ../requirements.txt -t package/ --no-deps
-pip install -q --index-url https://pypi.org/simple boto3 werkzeug python-docx -t package/
+# Get outputs
+echo "Getting deployment details..."
+INSTANCE_ID=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`InstanceId`].OutputValue' \
+  --output text)
 
-# Copy source files
-cp lambda_function.py package/
-cp -r models package/
-cp -r utils package/
+PUBLIC_IP=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`PublicIP`].OutputValue' \
+  --output text)
 
-# Remove numpy source files that cause conflicts
-find package -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
-find package -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
-find package -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+WEBSITE_URL=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`WebsiteURL`].OutputValue' \
+  --output text)
 
-# Create zip
-cd package
-zip -q -r ../lambda.zip .
-cd ..
-rm -rf package
+S3_BUCKET=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
+  --output text)
 
-echo "   ✓ Lambda package created ($(du -h lambda.zip | cut -f1))"
+SSH_COMMAND=$(aws cloudformation describe-stacks \
+  --stack-name $STACK_NAME \
+  --region $REGION \
+  --query 'Stacks[0].Outputs[?OutputKey==`SSHCommand`].OutputValue' \
+  --output text)
 
-# Step 4: Deploy Lambda
+# Download private key
+echo "Downloading EC2 private key..."
+aws ec2 describe-key-pairs \
+  --key-names cooking-assistant-key \
+  --region $REGION \
+  --include-public-key \
+  --query 'KeyPairs[0].KeyMaterial' \
+  --output text > cooking-assistant-key.pem 2>/dev/null || echo "Key pair already exists locally"
+chmod 400 cooking-assistant-key.pem 2>/dev/null || true
+
 echo ""
-echo "Step 4/5: Deploying Lambda function..."
-aws lambda update-function-code \
-    --function-name $LAMBDA_FUNCTION \
-    --zip-file fileb://lambda.zip \
-    --region $AWS_REGION > /dev/null
-
-rm lambda.zip
-cd ..
-
-echo "   ✓ Lambda deployed"
-
-# Step 5: Upload UI
+echo "==========================================="
+echo "  Deployment Complete!"
+echo "==========================================="
 echo ""
-echo "Step 5/5: Uploading UI files..."
-aws s3 cp src/frontend/templates/index.html s3://$RECIPES_BUCKET/ui/index.html --quiet
-aws s3 sync src/frontend/js/ s3://$RECIPES_BUCKET/ui/frontend/js/ --quiet --delete
-
-echo "   ✓ UI uploaded"
-
-# Optional: Index recipes
-if [ -d "data" ] && [ "$(ls -A data/*.txt 2>/dev/null)" ]; then
-    echo ""
-    echo "📚 Indexing recipes (optional)..."
-    python scripts/index_recipes.py || echo "   ⚠️  Recipe indexing skipped"
-fi
-
-# Summary
+echo "🎉 Your app will be available at:"
+echo "   $WEBSITE_URL"
 echo ""
-echo "=========================================="
-echo "✅ Deployment Complete!"
-echo "=========================================="
+echo "📊 Resources created:"
+echo "   - CloudFormation stack: $STACK_NAME"
+echo "   - EC2 instance: $INSTANCE_ID"
+echo "   - Public IP: $PUBLIC_IP"
+echo "   - S3 bucket: $S3_BUCKET"
+echo "   - Key pair: cooking-assistant-key"
 echo ""
-echo "🌐 Your app: $API_ENDPOINT"
+echo "🔧 SSH access:"
+echo "   $SSH_COMMAND"
 echo ""
-echo "📝 Next steps:"
-echo "   1. Enable Bedrock models in AWS Console:"
-echo "      - Claude 3 Haiku"
-echo "      - Titan Embeddings V2"
-echo "   2. Test the app at the URL above"
-echo "   3. Monitor logs: aws logs tail /aws/lambda/$LAMBDA_FUNCTION --follow"
+echo "📊 Monitor your instance:"
+echo "   https://console.aws.amazon.com/ec2/home?region=$REGION#Instances:"
 echo ""
-echo "🔧 Update Lambda only: ./scripts/deploy_lambda.sh"
+echo "💰 Estimated cost: ~\$8-12/month"
+echo ""
+echo "⏳ Note: Instance is starting up, app may take 2-3 minutes to be ready"
 echo ""

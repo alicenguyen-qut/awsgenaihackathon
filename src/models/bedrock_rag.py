@@ -5,15 +5,45 @@ import time
 from typing import List, Dict, Any, Optional
 
 class BedrockRAG:
-    def __init__(self):
+    def __init__(self, recipes_bucket=None):
         self.bedrock_runtime = boto3.client('bedrock-runtime', region_name='ap-southeast-2')
         self.bedrock = boto3.client('bedrock', region_name='ap-southeast-2')
         self.s3 = boto3.client('s3')
+        self.recipes_bucket = recipes_bucket
         self.embeddings_cache = {}
+        self.recipes_cache = None
         self.tools = self._define_tools()
         self.response_cache = {}  # Cache responses
         self.last_request_time = 0  # Track last request
         
+    def load_recipes_from_s3(self) -> List[Dict]:
+        """Load recipes from S3 bucket"""
+        if self.recipes_cache:
+            return self.recipes_cache
+        
+        if not self.recipes_bucket:
+            return []
+        
+        try:
+            response = self.s3.get_object(Bucket=self.recipes_bucket, Key='embeddings/recipe_embeddings.json')
+            data = json.loads(response['Body'].read())
+            
+            recipes = []
+            for item in data:
+                recipes.append({
+                    'name': item['recipe_id'].replace('.txt', '').replace('_', ' ').title(),
+                    'description': item['text'],
+                    'tags': [],
+                    'calories': 0
+                })
+            
+            self.recipes_cache = recipes
+            print(f"✅ Loaded {len(recipes)} recipes from S3")
+            return recipes
+        except Exception as e:
+            print(f"Error loading recipes from S3: {e}")
+            return []
+    
     def get_embedding(self, text: str) -> List[float]:
         """Get embedding using Amazon Titan Embeddings V2"""
         try:

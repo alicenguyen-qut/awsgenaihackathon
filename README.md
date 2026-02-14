@@ -5,14 +5,14 @@ Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) wit
 ## Architecture
 
 ```
-User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
-                                    ↓
-                              S3 (Embeddings)
-                                    ↑
-                              Titan Embeddings
+User → Flask UI → EC2 Instance → Bedrock (Claude)
+                      ↓
+                S3 (Embeddings)
+                      ↑
+                Titan Embeddings
 ```
 
-**Cost-Optimized:** Uses S3 + in-memory vector search
+**Cost-Optimized:** Uses EC2 t3.micro + S3 + in-memory vector search
 
 ## Key Features
 
@@ -42,10 +42,10 @@ User → Flask UI → API Gateway → Lambda → Bedrock (Claude)
 
 - **Frontend:** Flask + HTML/CSS + JavaScript
 - **Backend:** Python (Flask)
+- **Infrastructure:** EC2 t3.micro + CloudFormation
 - **LLM:** Amazon Bedrock 
 - **Embeddings:** Amazon Titan Embeddings
 - **Vector Storage:** S3 + NumPy cosine similarity
-- **Infrastructure:** CloudFormation
 - **Session Storage:** JSON file-based
 
 ## Quick Start
@@ -92,8 +92,6 @@ python src/app.py
 make run-aws
 ```
 
-See [AWS_DEPLOY.md](AWS_DEPLOY.md) for full AWS deployment instructions.
-
 ## Project Structure
 
 ```
@@ -102,41 +100,38 @@ awsgenaihackathon/
 │   ├── nutrition_guidelines.txt
 │   └── recipe_*.txt
 ├── infrastructure/                # CloudFormation templates
-│   └── cloudformation.yaml
+│   └── cloudformation.yaml       # EC2 deployment template
 ├── scripts/                       # Deployment scripts
-│   ├── deploy.sh                # Full AWS deployment
-│   ├── update_lambda.sh         # Update Lambda code only
-│   ├── cleanup.sh               # Delete all AWS resources
-│   └── index_recipes.py         # Recipe indexing (Titan V2)
+│   ├── deploy.sh                 # EC2 deployment
+│   ├── cleanup.sh                # Delete all AWS resources
+│   └── index_recipes.py          # Recipe indexing (Titan V2)
 ├── src/
-│   ├── app.py                    # Main Flask application
-│   ├── lambda_function.py        # Lambda handler for AWS
-│   ├── models/                   # AI/ML models
+│   ├── app.py                     # Main Flask application
+│   ├── models/                    # AI/ML models
 │   │   ├── __init__.py
-│   │   └── bedrock_rag.py       # Bedrock RAG (Titan V2 + Claude)
-│   ├── utils/                    # Helper functions & config
+│   │   └── bedrock_rag.py        # Bedrock RAG (Titan V2 + Claude)
+│   ├── utils/                     # Helper functions & config
 │   │   ├── __init__.py
-│   │   ├── config.py            # Configuration & constants
-│   │   └── helpers.py           # User data, file handling
-│   └── frontend/                # Frontend assets
-│       ├── js/                  # Modular JavaScript
-│       │   ├── 01-core.js      # Core utilities & initialization
-│       │   ├── 02-auth.js      # Authentication & user management
-│       │   ├── 03-chat.js      # Chat operations & messages
-│       │   ├── 04-nutrition.js # Nutrition tracking & analytics
-│       │   ├── 05-meals.js     # Favorites, planner, shopping
-│       │   ├── 06-files.js     # File upload/management
-│       │   └── 07-agent.js     # AI autonomous agent
+│   │   ├── config.py             # Configuration & constants
+│   │   └── helpers.py            # User data, file handling
+│   └── frontend/                 # Frontend assets
+│       ├── js/                   # Modular JavaScript
+│       │   ├── 01-core.js       # Core utilities & initialization
+│       │   ├── 02-auth.js       # Authentication & user management
+│       │   ├── 03-chat.js       # Chat operations & messages
+│       │   ├── 04-nutrition.js  # Nutrition tracking & analytics
+│       │   ├── 05-meals.js      # Favorites, planner, shopping
+│       │   ├── 06-files.js      # File upload/management
+│       │   └── 07-agent.js      # AI autonomous agent
 │       └── templates/
-│           └── index.html      # Main UI template
-├── sessions/                     # Local user session data (gitignored)
-├── uploads/                      # Local uploaded files (gitignored)
+│           └── index.html       # Main UI template
+├── sessions/                      # Local user session data (gitignored)
+├── uploads/                       # Local uploaded files (gitignored)
 ├── .gitignore
-├── AWS_DEPLOY.md                # AWS deployment guide
-├── FEATURES.md                  # Feature documentation
-├── Makefile                     # Build commands
-├── README.md                    # Main documentation
-└── requirements.txt             # Python dependencies
+├── FEATURES.md                    # Feature documentation
+├── Makefile                       # Build commands
+├── README.md                      # Main documentation
+└── requirements.txt               # Python dependencies
 ```
 
 ## Environment Variables
@@ -153,14 +148,14 @@ awsgenaihackathon/
 # Install dependencies
 make install
 
-# Run locally (no AWS)
+# Run locally
 make run
 
-# Run with AWS backend
-make run-aws
+# Deploy to EC2 (Cost Optimized ~$8-12/month)
+make deploy-ec2
 
-# Deploy to AWS
-make deploy
+# Delete all AWS resources
+make cleanup
 
 # Clean cache files
 make clean
@@ -286,21 +281,42 @@ python test_daily_features.py
 
 ## Deployment
 
-### AWS Deployment
+### AWS EC2 Deployment (Cost Optimized)
 
-See [AWS_DEPLOY.md](AWS_DEPLOY.md) for comprehensive deployment guide including:
-- Prerequisites and setup
-- Step-by-step deployment
-- Cost optimization
-- Monitoring and troubleshooting
-- Security best practices
-
-### Quick Deploy
+**Monthly Cost: ~$8-12/month**
 
 ```bash
-# Deploy everything to AWS
-make deploy
+# Deploy to EC2
+make deploy-ec2
+
+# Delete all resources
+make cleanup
 ```
+
+#### What Gets Deployed:
+- **EC2 t3.micro instance** - $8.76/month (750 free tier hours)
+- **S3 bucket** - ~$1-3/month for user data storage
+- **Security groups** - Free
+- **IAM roles** - Free
+- **EC2 Key Pair** - Free
+
+#### Services Used:
+- **Amazon Bedrock** - Claude 3 Haiku + Titan Embeddings (~$15-25/month based on usage)
+- **Amazon S3** - Recipe embeddings and user data storage
+- **Amazon EC2** - Web server hosting
+
+#### Deployment Process:
+1. Creates CloudFormation stack with all resources
+2. Launches EC2 instance with auto-setup
+3. Installs Python dependencies and Flask app
+4. Configures nginx reverse proxy
+5. Sets up systemd service for auto-restart
+6. Indexes recipes to S3
+
+#### Access:
+- **Web App**: `http://<public-ip>`
+- **SSH**: `ssh -i cooking-assistant-key.pem ec2-user@<public-ip>`
+- **Logs**: `sudo journalctl -u cooking-assistant -f`
 
 ## Troubleshooting
 
@@ -323,13 +339,20 @@ make deploy
 - Set environment variable: `export USE_AWS=true`
 - Configure AWS credentials: `aws configure`
 - Check S3 bucket exists and accessible
+- Verify EC2 instance is running: `aws ec2 describe-instances`
+
+**EC2 deployment issues:**
+- Check CloudFormation stack status in AWS Console
+- SSH to instance: `ssh -i cooking-assistant-key.pem ec2-user@<public-ip>`
+- Check app logs: `sudo journalctl -u cooking-assistant -f`
+- Restart service: `sudo systemctl restart cooking-assistant`
 
 ### Getting Help
 
-1. Check documentation files (README, DEPLOYMENT, FEATURES)
+1. Check documentation files (README, FEATURES)
 2. Review error messages in terminal
 3. Check browser console for frontend errors
-4. For AWS issues, check CloudWatch logs
+4. For AWS issues, check CloudWatch logs or SSH to EC2 instance
 
 ## Future Enhancements
 
