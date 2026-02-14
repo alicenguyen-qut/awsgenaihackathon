@@ -927,7 +927,7 @@
             <div class="loading" id="loading"><div class="dot-pulse"></div></div>
             
             <div class="input-container">
-                <input type="file" id="fileInput" accept=".txt,.docx" onchange="uploadFile()" multiple style="display: none;">
+                <input type="file" id="fileInput" accept=".txt,.docx,.pdf" onchange="uploadFile()" multiple style="display: none;">
                 <div class="input-wrapper">
                     <button class="upload-icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload text files">📎</button>
                     <textarea 
@@ -1190,13 +1190,14 @@
 
 .file-modal-body {
     white-space: pre-wrap;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
+    font-size: 14px;
     color: #2d3748;
-    line-height: 1.6;
+    line-height: 1.8;
     background: #f7fafc;
-    padding: 16px;
+    padding: 20px;
     border-radius: 12px;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 .upload-icon-btn {

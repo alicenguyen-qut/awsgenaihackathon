@@ -47,15 +47,31 @@ async function viewFile(fileId) {
     if (data.filename) {
         const modal = document.getElementById('fileModal');
         document.getElementById('fileModalTitle').textContent = data.filename;
+        const contentDiv = document.getElementById('fileModalContent');
         
-        if (data.filename.endsWith('.txt') || data.filename.endsWith('.docx')) {
-            document.getElementById('fileModalContent').textContent = data.content;
+        if (data.filename.endsWith('.pdf')) {
+            // For PDF, use iframe viewer with the actual file path
+            const userId = data.filepath.split('/').pop().split('_')[0];
+            const fileUrl = `/uploads/${userId}_${data.filename}`;
+            contentDiv.innerHTML = `<iframe src="${fileUrl}" style="width: 100%; height: 60vh; border: none; border-radius: 8px;"></iframe>`;
+        } else if (data.filename.endsWith('.docx')) {
+            // For DOCX, render with preserved formatting
+            contentDiv.innerHTML = `<div style="white-space: pre-wrap; font-family: 'Georgia', serif; font-size: 14px; line-height: 1.8; color: #2d3748;">${escapeHtml(data.content)}</div>`;
+        } else if (data.filename.endsWith('.txt')) {
+            // For TXT, use monospace with better styling
+            contentDiv.innerHTML = `<div style="white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; color: #2d3748;">${escapeHtml(data.content)}</div>`;
         } else {
-            document.getElementById('fileModalContent').textContent = 'This file format cannot be displayed. Only .txt files are supported.';
+            contentDiv.textContent = 'This file format cannot be displayed.';
         }
         
         modal.classList.remove('hidden');
     }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function closeFileModal() {

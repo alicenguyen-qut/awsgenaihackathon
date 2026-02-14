@@ -15,7 +15,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-producti
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['SESSIONS_FOLDER'] = 'sessions'
-ALLOWED_EXTENSIONS = {'txt', 'docx'}
+ALLOWED_EXTENSIONS = {'txt', 'docx', 'pdf'}
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['SESSIONS_FOLDER'], exist_ok=True)
@@ -359,7 +359,9 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{user_id}_{filename}")
         file.save(filepath)
         
-        if filename.endswith('.docx'):
+        if filename.endswith('.pdf'):
+            content = 'PDF file uploaded (text extraction not implemented)'
+        elif filename.endswith('.docx'):
             try:
                 doc = Document(filepath)
                 content = '\n'.join([para.text for para in doc.paragraphs])
@@ -397,7 +399,7 @@ def upload_file():
             'file_id': file_info['id']
         })
     
-    return jsonify({'error': 'Invalid file type. Only .txt and .docx files allowed'}), 400
+    return jsonify({'error': 'Invalid file type. Only .txt, .docx, and .pdf files allowed'}), 400
 
 @app.route('/api/files', methods=['GET'])
 def get_files():
@@ -413,6 +415,9 @@ def get_file_content(file_id):
     files = user_data.get('uploaded_files', [])
     file_info = next((f for f in files if f['id'] == file_id), None)
     if file_info:
+        # For PDF, return the file path for iframe viewing
+        if file_info['filename'].endswith('.pdf'):
+            return jsonify({'filename': file_info['filename'], 'content': '', 'filepath': file_info['filepath']})
         return jsonify({'filename': file_info['filename'], 'content': file_info['content']})
     return jsonify({'error': 'File not found'}), 404
 
