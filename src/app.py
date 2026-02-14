@@ -1,14 +1,18 @@
 from flask import Flask, render_template, request, jsonify, session, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from docx import Document
 import json
 import os
 import uuid
 from datetime import datetime, timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
-from docx import Document
 
 # Import configuration and utilities
 from utils.config import USE_AWS, MOCK_RECIPES, SECRET_KEY, UPLOAD_FOLDER, SESSIONS_FOLDER, MAX_CONTENT_LENGTH
 from utils.helpers import allowed_file, get_user_file, load_user_data, save_user_data, find_user_by_username
+from utils.responses import get_mock_chat_response
+from utils.recommendations import generate_daily_recommendations
+from utils.analytics import calculate_nutrition_stats, calculate_period_analytics, update_streak
 
 # Import Bedrock RAG if AWS mode
 if USE_AWS:
@@ -406,45 +410,8 @@ def chat():
             print(f"Bedrock error: {e}")
             response = "I apologize, but I'm having trouble connecting to the AI service. Please try again."
     else:
-        # Local Mode: Hardcoded responses
-        query_lower = query.lower()
-        
-        if 'plan my week' in query_lower or 'weekly meal plan' in query_lower:
-            response = """Here's your weekly meal plan:
-
-• Grilled Chicken Salad - Mediterranean-style with fresh vegetables (380 cal)
-• Salmon with Roasted Vegetables - Omega-3 rich with broccoli (420 cal)
-• Vegetarian Buddha Bowl - Quinoa, chickpeas, sweet potato (520 cal)
-• Pasta Primavera - Whole wheat pasta with seasonal vegetables (450 cal)
-• Chicken Stir Fry - Asian-style with brown rice (410 cal)
-• Baked Cod with Asparagus - Light and healthy (350 cal)
-• Veggie Tacos - Black beans, avocado, salsa (380 cal)
-
-All meals are balanced and nutritious!"""
-        
-        elif 'vegan' in query_lower:
-            response = """🌱 Vegetarian Buddha Bowl - A colorful bowl with quinoa, chickpeas, sweet potato, and tahini dressing. High in fiber and plant-based protein (520 cal).
-
-Ingredients: quinoa, chickpeas, sweet potato, kale, tahini, lemon"""
-        
-        elif 'protein' in query_lower or 'muscle' in query_lower:
-            response = """💪 Grilled Chicken Salad - Mediterranean-style with fresh vegetables. Perfect for muscle growth (380 cal, 42g protein).
-
-🐟 Salmon with Roasted Vegetables - Rich in omega-3 and protein (420 cal, 38g protein)."""
-        
-        elif 'breakfast' in query_lower:
-            response = """⏰ Quick Protein Oatmeal - Steel-cut oats with banana, almonds, and protein powder (350 cal, 20g protein)
-
-🥚 Veggie Egg Scramble - Eggs with spinach, tomatoes, and feta (280 cal, 18g protein)"""
-        
-        else:
-            response = """Here are some recipe suggestions:
-
-• Grilled Chicken Salad - Mediterranean-style with fresh vegetables (380 cal)
-• Vegetarian Buddha Bowl - Quinoa, chickpeas, sweet potato (520 cal)  
-• Salmon with Roasted Vegetables - Omega-3 rich (420 cal)
-
-All meals are balanced and nutritious!"""
+        # Local Mode: Mock responses
+        response = get_mock_chat_response(query)
     
     # Save messages to chat history
     if current_chat:
@@ -623,11 +590,8 @@ def get_nutrition_stats():
         user_id = get_user_session()
         user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-        logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == date]
-        
-        total = {'calories': sum(l['calories'] for l in logs), 'protein': sum(l['protein'] for l in logs),
-                 'carbs': sum(l['carbs'] for l in logs), 'fats': sum(l['fats'] for l in logs)}
-        return jsonify({'stats': total, 'meal_count': len(logs)})
+        result = calculate_nutrition_stats(user_data.get('nutrition_logs', []), date)
+        return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -652,16 +616,7 @@ def get_streaks():
         if 'streaks' not in user_data:
             user_data['streaks'] = {'current': 0, 'longest': 0, 'last_login': None}
         
-        today = datetime.now().strftime('%Y-%m-%d')
-        last = user_data['streaks'].get('last_login')
-        
-        if last != today:
-            if last == (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d'):
-                user_data['streaks']['current'] += 1
-            else:
-                user_data['streaks']['current'] = 1
-            user_data['streaks']['longest'] = max(user_data['streaks']['current'], user_data['streaks'].get('longest', 0))
-            user_data['streaks']['last_login'] = today
+        if update_streak(user_data['streaks']):
             save_user_data(user_id, user_data, app.config["SESSIONS_FOLDER"])
         
         return jsonify({'streaks': user_data['streaks']})
@@ -674,44 +629,8 @@ def get_nutrition_analytics():
         user_id = get_user_session()
         user_data = load_user_data(user_id, app.config["SESSIONS_FOLDER"])
         period = request.args.get('period', 'today')
-        
-        logs = user_data.get('nutrition_logs', [])
-        
-        if period == 'today':
-            today = datetime.now().strftime('%Y-%m-%d')
-            period_logs = [l for l in logs if l['date'] == today]
-        elif period == 'week':
-            week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-            period_logs = [l for l in logs if l['date'] >= week_ago]
-        elif period == 'month':
-            month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-            period_logs = [l for l in logs if l['date'] >= month_ago]
-        else:  # year
-            year_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
-            period_logs = [l for l in logs if l['date'] >= year_ago]
-        
-        if not period_logs:
-            return jsonify({'analytics': {'avgCalories': 0, 'avgProtein': 0, 'totalDays': 0, 'bestDay': 0}, 'insights': []})
-        
-        total_cal = sum(l['calories'] for l in period_logs)
-        total_protein = sum(l['protein'] for l in period_logs)
-        unique_days = len(set(l['date'] for l in period_logs))
-        best_day = max((sum(l['calories'] for l in logs if l['date'] == date) for date in set(l['date'] for l in period_logs)), default=0)
-        
-        analytics = {
-            'avgCalories': total_cal / unique_days if unique_days > 0 else 0,
-            'avgProtein': total_protein / unique_days if unique_days > 0 else 0,
-            'totalDays': unique_days,
-            'bestDay': best_day
-        }
-        
-        insights = [
-            f"You've logged meals for {unique_days} days",
-            f"Average daily intake: {int(analytics['avgCalories'])} calories",
-            f"Most common meal type: {max(set(l['meal_type'] for l in period_logs), key=lambda x: sum(1 for l in period_logs if l['meal_type'] == x)) if period_logs else 'None'}"
-        ]
-        
-        return jsonify({'analytics': analytics, 'insights': insights})
+        result = calculate_period_analytics(user_data.get('nutrition_logs', []), period)
+        return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -724,63 +643,9 @@ def get_daily_recommendations():
         
         today = datetime.now().strftime('%Y-%m-%d')
         logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == today]
-        total_cal = sum(l['calories'] for l in logs)
-        total_protein = sum(l['protein'] for l in logs)
-        total_carbs = sum(l['carbs'] for l in logs)
-        total_fats = sum(l['fats'] for l in logs)
-        
         profile = user_data.get('nutrition_profile', {})
-        goal = profile.get('healthGoal', '')
-        dietary = profile.get('dietary', [])
         
-        recommendations = []
-        tips = []
-        
-        # Calorie-based recommendations
-        if total_cal < 800:
-            if 'vegan' in dietary or 'vegetarian' in dietary:
-                recommendations.append({'type': 'meal', 'title': 'Vegetarian Buddha Bowl', 'reason': 'Plant-based protein & fiber', 'calories': 520, 'protein': 18})
-                recommendations.append({'type': 'meal', 'title': 'Quinoa Veggie Stir-Fry', 'reason': 'Complete protein source', 'calories': 450, 'protein': 16})
-            else:
-                recommendations.append({'type': 'meal', 'title': 'Grilled Chicken Salad', 'reason': 'High protein, low carb', 'calories': 380, 'protein': 42})
-                recommendations.append({'type': 'meal', 'title': 'Salmon with Vegetables', 'reason': 'Omega-3 rich', 'calories': 420, 'protein': 38})
-        elif total_cal < 1200:
-            recommendations.append({'type': 'meal', 'title': 'Greek Yogurt Parfait', 'reason': 'Protein-rich snack', 'calories': 280, 'protein': 20})
-        elif total_cal > 2000:
-            tips.append('You\'ve reached your calorie goal! Consider light snacks or herbal tea.')
-        
-        # Protein recommendations
-        if total_protein < 30:
-            tips.append('💪 Boost protein: Add eggs, Greek yogurt, or lean meat to your next meal')
-            if 'vegan' in dietary:
-                recommendations.append({'type': 'meal', 'title': 'Tofu Scramble', 'reason': 'Plant-based protein', 'calories': 320, 'protein': 24})
-        elif total_protein < 60:
-            tips.append('Good protein intake! Aim for 20-30g more for optimal muscle maintenance')
-        
-        # Carb recommendations
-        if total_carbs < 50 and goal == 'energy-boost':
-            tips.append('🍞 Low on carbs: Add whole grains or fruits for sustained energy')
-        
-        # Fat recommendations
-        if total_fats < 20:
-            tips.append('🥑 Healthy fats: Include avocado, nuts, or olive oil for nutrient absorption')
-        
-        # Goal-specific recommendations
-        if goal == 'weight-loss' and total_cal < 1500:
-            recommendations.append({'type': 'meal', 'title': 'Zucchini Noodles with Chicken', 'reason': 'Low-calorie, high-volume', 'calories': 340, 'protein': 35})
-        elif goal == 'muscle-gain' and total_protein < 100:
-            recommendations.append({'type': 'meal', 'title': 'Protein Power Bowl', 'reason': 'High protein for muscle growth', 'calories': 580, 'protein': 48})
-        elif goal == 'heart-health':
-            recommendations.append({'type': 'meal', 'title': 'Mediterranean Salmon', 'reason': 'Heart-healthy omega-3s', 'calories': 420, 'protein': 38})
-        
-        # Hydration reminder
-        if len(logs) > 0:
-            tips.append('💧 Stay hydrated: Drink 8 glasses of water throughout the day')
-        
-        # Combine tips into recommendations
-        for tip in tips:
-            recommendations.append({'type': 'tip', 'message': tip})
-        
+        recommendations = generate_daily_recommendations(logs, profile)
         return jsonify({'recommendations': recommendations})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
