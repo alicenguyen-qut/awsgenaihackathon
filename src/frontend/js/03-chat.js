@@ -6,7 +6,12 @@ async function createNewChat() {
     const data = await response.json();
     currentChatId = data.chat_id;
     showWelcomeMessage();
-    await loadSession();
+    // Reload session but don't load the chat content (keep welcome message)
+    const sessionResponse = await fetch('/api/session');
+    const sessionData = await sessionResponse.json();
+    if (typeof renderChatList === 'function' && sessionData.chats) {
+        renderChatList(sessionData.chats);
+    }
 }
 
 function renderChatList(chats) {

@@ -218,7 +218,9 @@ async function clearChatHistory() {
             if (data.success) {
                 showAlert('Chat history cleared!', 'success');
                 closeSettings();
-                location.reload();
+                // Clear chat UI without reloading
+                document.getElementById('chatList').innerHTML = '';
+                showWelcomeMessage();
             } else {
                 showAlert(data.error || 'Failed to clear chats', 'error');
             }
@@ -238,7 +240,8 @@ async function clearUploadedFiles() {
             if (data.success) {
                 showAlert('Uploaded files cleared!', 'success');
                 closeSettings();
-                location.reload();
+                // Reload file list without page reload
+                if (typeof loadFiles === 'function') loadFiles();
             } else {
                 showAlert(data.error || 'Failed to clear files', 'error');
             }
