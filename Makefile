@@ -1,20 +1,16 @@
-.PHONY: install run run-aws deploy clean help
+.PHONY: install run deploy clean help
 
 install:
 	@echo "Installing Python dependencies..."
 	@pip install -r requirements.txt
 
 run:
-	@echo "Running Flask app in LOCAL mode..."
+	@echo "Running Flask app (mode set in .env)..."
 	@python src/app.py
-
-run-aws:
-	@echo "Running Flask app with AWS Bedrock..."
-	@USE_AWS=true python src/app.py
 
 deploy:
 	@echo "Deploying to AWS..."
-	@bash scripts/deploy_full.sh
+	@bash scripts/deploy.sh
 
 clean:
 	@echo "Cleaning up cache files..."
@@ -26,9 +22,11 @@ help:
 	@echo "Personal Cooking Assistant - Available Commands:"
 	@echo ""
 	@echo "  make install   - Install Python dependencies"
-	@echo "  make run       - Run app locally (mock data, no AWS)"
-	@echo "  make run-aws   - Run app with AWS Bedrock RAG"
+	@echo "  make run       - Run app (USE_AWS set in .env file)"
 	@echo "  make deploy    - Deploy to AWS (full stack)"
 	@echo "  make clean     - Clean up cache files"
 	@echo "  make help      - Show this help message"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  Edit .env file to set USE_AWS=true or USE_AWS=false"
 	@echo ""

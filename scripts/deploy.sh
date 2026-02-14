@@ -68,8 +68,9 @@ cd src
 rm -rf package lambda.zip
 mkdir -p package
 
-# Install dependencies
-pip install -q --index-url https://pypi.org/simple -r ../requirements.txt -t package/
+# Install dependencies (exclude numpy - use Lambda's built-in)
+pip install -q --index-url https://pypi.org/simple -r ../requirements.txt -t package/ --no-deps
+pip install -q --index-url https://pypi.org/simple boto3 werkzeug python-docx -t package/
 
 # Copy source files
 cp lambda_function.py package/

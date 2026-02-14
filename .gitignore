@@ -58,3 +58,4 @@ uploads/
 *.tmp
 .cache/
 *.lock
+.env
