@@ -346,7 +346,11 @@ def upload_file():
             user_data['uploaded_files'] = []
         user_data['uploaded_files'].append(file_info)
         storage.save_user_data(user_id, user_data)
-        
+
+        # Embed and store to S3 for RAG
+        if USE_AWS and bedrock_rag and S3_BUCKET and content:
+            bedrock_rag.embed_and_store_file(content, user_id, file_info['id'], S3_BUCKET)
+
         MOCK_RECIPES.append({
             "name": filename,
             "description": content[:200],
@@ -394,6 +398,9 @@ def delete_file(file_id):
             os.remove(file_info['filepath'])
         user_data['uploaded_files'] = [f for f in files if f['id'] != file_id]
         storage.save_user_data(user_id, user_data)
+        # Remove embeddings for this file from S3
+        if USE_AWS and bedrock_rag and S3_BUCKET:
+            bedrock_rag.embed_and_store_file('', user_id, file_id, S3_BUCKET)  # empty text = just removes old chunks
         return jsonify({'success': True})
     return jsonify({'error': 'File not found'}), 404
 
@@ -511,7 +518,7 @@ def chat():
                     traceback.print_exc()
                     return {"success": False, "error": str(e)}
             
-            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []))
+            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []), user_id=user_id, uploads_bucket=S3_BUCKET)
             response = result.get('response', '')
             tool_calls = result.get('tool_calls', [])
             

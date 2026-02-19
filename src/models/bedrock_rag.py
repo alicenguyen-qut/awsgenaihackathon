@@ -329,20 +329,69 @@ class BedrockRAG:
             }
         ]
     
-    def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None, 
-                      tool_handler: Optional[Any] = None, chat_history: List[Dict] = None) -> Dict:
+    def embed_and_store_file(self, text: str, user_id: str, file_id: str, bucket: str) -> bool:
+        """Chunk, embed, and store a user-uploaded file to S3"""
+        try:
+            # Chunk text into ~500 char segments with overlap
+            chunk_size, overlap = 500, 50
+            chunks = []
+            for i in range(0, len(text), chunk_size - overlap):
+                chunk = text[i:i + chunk_size].strip()
+                if chunk:
+                    chunks.append(chunk)
+
+            embeddings = []
+            for chunk in chunks:
+                emb = self.get_embedding(chunk)
+                embeddings.append({'text': chunk, 'embedding': emb, 'file_id': file_id})
+
+            # Load existing embeddings for this user
+            key = f'uploads/{user_id}_embeddings.json'
+            try:
+                resp = self.s3.get_object(Bucket=bucket, Key=key)
+                existing = json.loads(resp['Body'].read())
+            except:
+                existing = []
+
+            # Remove old chunks for this file_id and append new ones
+            existing = [e for e in existing if e.get('file_id') != file_id]
+            existing.extend(embeddings)
+
+            self.s3.put_object(Bucket=bucket, Key=key,
+                               Body=json.dumps(existing), ContentType='application/json')
+            return True
+        except Exception as e:
+            print(f"embed_and_store_file error: {e}")
+            return False
+
+    def search_user_uploads(self, query: str, user_id: str, bucket: str, top_k: int = 3) -> List[str]:
+        """Search user upload embeddings and return top matching chunks"""
+        try:
+            key = f'uploads/{user_id}_embeddings.json'
+            resp = self.s3.get_object(Bucket=bucket, Key=key)
+            embeddings = json.loads(resp['Body'].read())
+            if not embeddings:
+                return []
+
+            query_emb = self.get_embedding(query)
+            scored = [(self.cosine_similarity(query_emb, e['embedding']), e['text']) for e in embeddings]
+            scored.sort(key=lambda x: x[0], reverse=True)
+            return [text for _, text in scored[:top_k]]
+        except:
+            return []
+
+    def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None,
+                      tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
+                      user_id: str = None, uploads_bucket: str = None) -> Dict:
         """Main agentic RAG pipeline with tool use"""
-        # Skip embedding search to avoid rate limits - use simple matching
         query_lower = query.lower()
-        relevant_recipes = [r for r in recipes if any(word in r.get('name', '').lower() or 
+        relevant_recipes = [r for r in recipes if any(word in r.get('name', '').lower() or
                                                        word in r.get('description', '').lower() or
                                                        any(word in tag.lower() for tag in r.get('tags', []))
                                                        for word in query_lower.split())][:3]
-        
         if not relevant_recipes:
             relevant_recipes = recipes[:3]
-        
-        # Build context from relevant recipes
+
         context = "\n\n".join([
             f"Recipe: {r.get('name', 'Unknown')}\n"
             f"Description: {r.get('description', 'No description')}\n"
@@ -350,8 +399,13 @@ class BedrockRAG:
             f"Calories: {r.get('calories', 'Unknown')}"
             for r in relevant_recipes
         ])
-        
-        # Generate response with agentic capabilities
+
+        # Append relevant user upload chunks if available
+        if user_id and uploads_bucket:
+            upload_chunks = self.search_user_uploads(query, user_id, uploads_bucket)
+            if upload_chunks:
+                context += "\n\nUser Uploaded Documents:\n" + "\n---\n".join(upload_chunks)
+
         return self.generate_agentic_response(query, context, user_profile, tool_handler, chat_history)
 
     def _fallback_response(self, query: str, tool_handler: Optional[Any] = None) -> Dict:
