@@ -157,8 +157,9 @@ function showWelcomeMessage() {
     document.getElementById('chatContainer').innerHTML = `
         <div class="welcome-message">
             <div class="welcome-icon">🍳</div>
-            <h2>Your Personal Cooking Assistant</h2>
-            <p>Get personalized recipes, nutrition advice, and meal planning help!</p>
+            <h2>MealBuddy 🍽️</h2>
+                    <p style="font-size:15px; color:#8b6f8f; font-style:italic; margin-bottom:8px;">Your daily buddy for smarter eating habits</p>
+            <p>Your daily buddy for smarter eating habits.</p>
             <div class="suggestions">
                 <div class="suggestion-card" onclick="sendSuggestion('Show me high-protein low-carb recipes')">
                     <div class="suggestion-icon">💪</div>

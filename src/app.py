@@ -771,7 +771,7 @@ def get_daily_recommendations():
 if __name__ == '__main__':
     mode = "AWS MODE" if USE_AWS else "LOCAL MODE"
     print("\n" + "="*60)
-    print(f"🍳 AI Cooking Assistant - {mode}")
+    print(f"🍽️ MealBuddy - {mode}")
     print("="*60)
     if not USE_AWS:
         print("Running without AWS - using mock data")

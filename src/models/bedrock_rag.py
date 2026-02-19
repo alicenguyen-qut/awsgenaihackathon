@@ -124,7 +124,7 @@ class BedrockRAG:
         
         try:
             # Build system prompt
-            system_prompt = """You are an autonomous AI cooking assistant with the ability to take actions on behalf of the user.
+            system_prompt = """You are MealBuddy, an autonomous AI meal planning assistant with the ability to take actions on behalf of the user.
 
             You can:
             - Search for recipes
