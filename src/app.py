@@ -79,7 +79,8 @@ def login():
             
             # Login successful - set session to existing user
             session['user_id'] = existing_user_id
-            return jsonify({'success': True, 'username': username})
+            has_profile = bool(existing_user_data.get('nutrition_profile', {}).get('healthGoal') or existing_user_data.get('nutrition_profile', {}).get('dietary'))
+            return jsonify({'success': True, 'username': username, 'is_new_user': not has_profile})
         else:
             # New user registration
             user_id = get_user_session()  # This creates a new session ID
@@ -94,7 +95,7 @@ def login():
             user_data['shopping_list'] = []
             storage.save_user_data(user_id, user_data)
             
-            return jsonify({'success': True, 'username': username})
+            return jsonify({'success': True, 'username': username, 'is_new_user': True})
             
     except Exception as e:
         print(f"Login error: {str(e)}")

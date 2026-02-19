@@ -24,6 +24,7 @@ async function login() {
             document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
             document.getElementById('loginModal').classList.add('hidden');
             await loadSession();
+            if (data.is_new_user) showNutritionSetupModal();
         } else {
             showAlert(data.error || 'Login failed', 'error');
         }
@@ -129,7 +130,11 @@ async function saveNutritionProfile() {
     const profile = {
         dietary,
         healthGoal: document.getElementById('healthGoal').value,
-        allergies: document.getElementById('allergies').value.split(',').map(a => a.trim()).filter(a => a)
+        allergies: document.getElementById('allergies').value.split(',').map(a => a.trim()).filter(a => a),
+        gender: document.getElementById('gender').value,
+        age: document.getElementById('age').value,
+        weight: document.getElementById('weight').value,
+        height: document.getElementById('height').value
     };
     
     try {
@@ -142,6 +147,7 @@ async function saveNutritionProfile() {
         const data = await response.json();
         
         if (data.success) {
+            document.getElementById('nutritionSetupModal').classList.add('hidden');
             showAlert('Nutrition profile saved!', 'success');
         } else {
             showAlert(data.error || 'Failed to save profile', 'error');
@@ -151,6 +157,26 @@ async function saveNutritionProfile() {
         showAlert('Failed to save profile', 'error');
     }
 }
+
+function showNutritionSetupModal() {
+    document.getElementById('nutritionSetupModal').classList.remove('hidden');
+}
+
+function updateDietaryLabel() {
+    const labels = ['vegan','vegetarian','glutenFree','dairyFree','nutFree']
+        .filter(id => document.getElementById(id).checked)
+        .map(id => document.getElementById(id).parentElement.textContent.trim());
+    const el = document.getElementById('dietaryLabel');
+    el.textContent = labels.length ? labels.join(', ') : 'Select restrictions...';
+    el.style.color = labels.length ? '#2d3748' : '#a0aec0';
+}
+
+document.addEventListener('click', e => {
+    const dd = document.getElementById('dietaryDropdown');
+    const trigger = document.getElementById('dietaryTrigger');
+    if (dd && !dd.contains(e.target) && e.target !== trigger && !trigger.contains(e.target))
+        dd.style.display = 'none';
+});
 
 async function loadNutritionProfile() {
     try {
@@ -165,9 +191,14 @@ async function loadNutritionProfile() {
                 document.getElementById('glutenFree').checked = p.dietary.includes('gluten-free');
                 document.getElementById('dairyFree').checked = p.dietary.includes('dairy-free');
                 document.getElementById('nutFree').checked = p.dietary.includes('nut-free');
+                updateDietaryLabel();
             }
             if (p.healthGoal) document.getElementById('healthGoal').value = p.healthGoal;
             if (p.allergies) document.getElementById('allergies').value = p.allergies.join(', ');
+            if (p.gender) document.getElementById('gender').value = p.gender;
+            if (p.age) document.getElementById('age').value = p.age;
+            if (p.weight) document.getElementById('weight').value = p.weight;
+            if (p.height) document.getElementById('height').value = p.height;
         }
     } catch (error) {
         console.error('Load profile error:', error);
