@@ -104,7 +104,7 @@ class BedrockRAG:
             return matches[:top_k] if matches else recipes[:top_k]
     
     def generate_agentic_response(self, query: str, context: str, user_profile: Dict = None,
-                                  tool_handler: Optional[Any] = None) -> Dict:
+                                  tool_handler: Optional[Any] = None, chat_history: List[Dict] = None) -> Dict:
         """Generate response using Claude with tool use capabilities"""
         # Check cache first
         cache_key = f"{query}:{str(user_profile)}"
@@ -155,7 +155,13 @@ class BedrockRAG:
 
             User Request: {query}"""
                         
-            messages = [{"role": "user", "content": user_message}]
+            # Build messages with chat history prepended
+            history_messages = [
+                {"role": m["role"], "content": m["content"]}
+                for m in (chat_history or [])
+                if m.get("role") in ("user", "assistant") and m.get("content")
+            ]
+            messages = history_messages + [{"role": "user", "content": user_message}]
             tool_results = []
             
             # Agentic loop - allow up to 5 tool calls
@@ -324,7 +330,7 @@ class BedrockRAG:
         ]
     
     def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None, 
-                      tool_handler: Optional[Any] = None) -> Dict:
+                      tool_handler: Optional[Any] = None, chat_history: List[Dict] = None) -> Dict:
         """Main agentic RAG pipeline with tool use"""
         # Skip embedding search to avoid rate limits - use simple matching
         query_lower = query.lower()
@@ -346,7 +352,7 @@ class BedrockRAG:
         ])
         
         # Generate response with agentic capabilities
-        return self.generate_agentic_response(query, context, user_profile, tool_handler)
+        return self.generate_agentic_response(query, context, user_profile, tool_handler, chat_history)
 
     def _fallback_response(self, query: str, tool_handler: Optional[Any] = None) -> Dict:
         """Fallback response when rate limited - uses pattern matching"""

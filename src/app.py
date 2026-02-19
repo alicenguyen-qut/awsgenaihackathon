@@ -511,7 +511,7 @@ def chat():
                     traceback.print_exc()
                     return {"success": False, "error": str(e)}
             
-            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler)
+            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []))
             response = result.get('response', '')
             tool_calls = result.get('tool_calls', [])
             
