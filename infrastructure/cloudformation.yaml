@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Personal Cooking Assistant - Elastic Beanstalk Deployment'
+Description: 'MealBuddy - Elastic Beanstalk Deployment'
 
 Parameters:
   S3BucketName:
@@ -29,15 +29,15 @@ Resources:
   Application:
     Type: AWS::ElasticBeanstalk::Application
     Properties:
-      ApplicationName: cooking-assistant
-      Description: Personal Cooking Assistant with AI
+      ApplicationName: mealbuddy
+      Description: MealBuddy - AI Cooking Assistant
 
   # Elastic Beanstalk Environment
   Environment:
     Type: AWS::ElasticBeanstalk::Environment
     Properties:
       ApplicationName: !Ref Application
-      EnvironmentName: cooking-assistant-env
+      EnvironmentName: mealbuddy-env
       SolutionStackName: "64bit Amazon Linux 2023 v4.9.3 running Python 3.11"
       OptionSettings:
         - Namespace: aws:elasticbeanstalk:environment
@@ -66,7 +66,7 @@ Resources:
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CookingAssistantEBRole
+      RoleName: MealBuddyEBRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -77,7 +77,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
       Policies:
-        - PolicyName: CookingAssistantPermissions
+        - PolicyName: MealBuddyPermissions
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
