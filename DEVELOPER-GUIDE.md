@@ -21,9 +21,9 @@ User → Flask UI → Elastic Beanstalk → Bedrock (Claude 3 Haiku + Titan Embe
 - **💡 Smart Recommendations** — AI suggests meals based on today's nutrition gaps and user profile
 
 ### 2.2 🤖 Strands Agent System
-- **6 tools** — `search_recipes`, `add_to_favorites`, `add_to_meal_plan`, `add_to_shopping_list`, `log_nutrition`, `get_nutrition_stats`
+- **Available tools** — `search_recipes`, `add_to_favorites`, `add_to_meal_plan`, `add_to_shopping_list`, `log_nutrition`, `get_nutrition_stats`
 - **Tool call logging** — All agent actions returned to frontend for transparent visual feedback
-- **RAG over user uploads** — Per-user embeddings 
+- **RAG over user uploads** — Per-user embeddings for personalisation
 
 ### 2.3 🍳 Core Features
 - AI-powered chat with RAG (Titan Embeddings V2, 1024-dim)
