@@ -322,7 +322,13 @@ def upload_file():
         file.save(filepath)
         
         if filename.endswith('.pdf'):
-            content = 'PDF file uploaded (text extraction not implemented)'
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(filepath)
+                content = '\n'.join(page.extract_text() or '' for page in reader.pages)
+            except Exception as e:
+                print(f"PDF extraction error: {e}")
+                content = ''
         elif filename.endswith('.docx'):
             try:
                 doc = Document(filepath)

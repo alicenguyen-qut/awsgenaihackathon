@@ -107,7 +107,8 @@ class BedrockRAG:
                                   tool_handler: Optional[Any] = None, chat_history: List[Dict] = None) -> Dict:
         """Generate response using Claude with tool use capabilities"""
         # Check cache first
-        cache_key = f"{query}:{str(user_profile)}"
+        recent_history = str([m.get('content', '')[:50] for m in (chat_history or [])[-4:]])
+        cache_key = f"{query}:{str(user_profile)}:{recent_history}"
         if cache_key in self.response_cache:
             print("Using cached response")
             return self.response_cache[cache_key]
@@ -135,7 +136,10 @@ class BedrockRAG:
             - Track daily nutrition stats
 
             When users ask you to do something (like "plan my week" or "add this to favorites"), proactively use the available tools to help them.
-            Be conversational and explain what actions you're taking."""
+            Be conversational and explain what actions you're taking.
+
+            If the provided recipe context is limited or doesn't match the user's request, use your own culinary knowledge to provide helpful, accurate answers with full ingredients and step-by-step instructions.
+            Always give complete, actionable responses even when context is sparse."""
             
             if user_profile:
                 dietary = user_profile.get('dietary', [])
@@ -384,13 +388,7 @@ class BedrockRAG:
                       tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
                       user_id: str = None, uploads_bucket: str = None) -> Dict:
         """Main agentic RAG pipeline with tool use"""
-        query_lower = query.lower()
-        relevant_recipes = [r for r in recipes if any(word in r.get('name', '').lower() or
-                                                       word in r.get('description', '').lower() or
-                                                       any(word in tag.lower() for tag in r.get('tags', []))
-                                                       for word in query_lower.split())][:3]
-        if not relevant_recipes:
-            relevant_recipes = recipes[:3]
+        relevant_recipes = self.search_recipes(query, recipes, top_k=5) if recipes else []
 
         context = "\n\n".join([
             f"Recipe: {r.get('name', 'Unknown')}\n"
