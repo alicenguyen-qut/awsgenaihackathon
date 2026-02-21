@@ -6,17 +6,15 @@
 
 > Built and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Agent & Kiro
 
-📋 [Features](FEATURES.md) · 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
-
 ---
 
 ## 1. Use Case
 
 ### The Problem
 
-Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **67% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2022)*.
+Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **66% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2024)*.
 
-The intent to eat better is not the problem. Research shows **over 80% of people who begin a healthy eating plan abandon it within two weeks** — not from lack of motivation, but from the cognitive and logistical burden of sustaining it *(Hartmann et al., IJBNPA, 2013)*. Meal planning takes 2–3 hours per week. A dietitian costs $100–$400 per session. Calorie tracking apps require manual entry for every meal. The tools are fragmented, generic, and exhausting.
+The intent to eat better is not the problem. Research consistently shows that **most people who begin a healthy eating plan struggle to sustain it long-term** — not from lack of motivation, but from the cognitive and logistical burden of maintaining it *(Teixeira et al., IJBNPA, 2015)*. Meal planning takes 2–3 hours per week. A dietitian costs $100–$400 per session. Calorie tracking apps require manual entry for every meal. The tools are fragmented, generic, and exhausting.
 
 ### Who Is This For
 
@@ -27,7 +25,7 @@ The intent to eat better is not the problem. Research shows **over 80% of people
 
 ### Value Proposition
 
-MealBuddy replaces four separate tools — recipe search, meal planner, shopping list, and nutrition tracker — with a **single conversation**. Set your dietary preferences once. From that point, every interaction is personalised:
+MealBuddy brings recipe search, meal planning, shopping lists, and nutrition tracking together in a **single personalised conversation**. Set your dietary preferences once. From that point, every interaction is personalised:
 
 - Ask for a high-protein dinner → get a complete recipe with ingredients and steps
 - Say "plan my week" → seven days populate automatically via autonomous agent
@@ -38,13 +36,13 @@ MealBuddy replaces four separate tools — recipe search, meal planner, shopping
 
 ### Why This Is Disruptive
 
-Every existing nutrition app is reactive — you open it, input data, it shows you a number. MealBuddy is the first to combine **conversational AI**, **semantic search over personal documents (RAG)**, and **autonomous multi-step action** in a single lightweight product.
+Every existing nutrition app is reactive — you open it, input data, it shows you a number. MealBuddy is the first to combine **conversational AI**, **semantic search over personal documents (RAG)**, and **autonomous multi-step action** in a single solution.
 
-This is the difference between a calculator and an accountant. Between a recipe website and a personal chef who already knows your allergies, your goals, and what's in your fridge.
+It's the difference between a recipe website that shows you options and a planning tool that already knows your allergies, your goals, and what's in your fridge.
 
-At a time when a nutritionist costs $400/month, MealBuddy delivers the same personalised guidance at the cost of a cloud compute bill. That is what changes behaviour — not better features, but lower friction.
+Personalised nutrition guidance has always been expensive and time-consuming. MealBuddy makes it accessible to anyone, at the cost of a conversation.
 
-*Sources: WHO Global Health Estimates 2019; GBD Diet Collaborators, The Lancet 2019; AIHW Australian Burden of Disease Study 2022; Hartmann et al., IJBNPA 2013.*
+*Sources: [GBD Diet Collaborators, The Lancet (2019)](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)30041-8/fulltext); [AIHW Overweight and Obesity (2024)](https://www.aihw.gov.au/reports/overweight-obesity/overweight-and-obesity/contents/overweight-and-obesity); [Teixeira et al., IJBNPA (2015)](https://ijbnpa.biomedcentral.com/articles/10.1186/1479-5868-12-S1-S4)*
 
 ---
 
