@@ -5,7 +5,6 @@ import numpy as np
 import time
 from typing import List, Dict, Any, Optional
 
-from strands import Agent, tool
 from strands.models import BedrockModel
 
 
@@ -100,12 +99,13 @@ class BedrockRAG:
         except Exception:
             return []
 
-    # ── Strands Agent entry point ──────────────────────────────────────────
+    # ── Multi-Agent entry point ────────────────────────────────────────────
 
     def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None,
                       tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
-                      user_id: str = None, uploads_bucket: str = None) -> Dict:
-        """Main RAG pipeline — now powered by Strands Agent."""
+                      user_id: str = None, uploads_bucket: str = None,
+                      meal_plan: Dict = None) -> Dict:
+        """Routes user query to the appropriate specialist agent."""
 
         # Build RAG context
         relevant = self.search_recipes(query, recipes, top_k=5) if recipes else []
@@ -118,84 +118,21 @@ class BedrockRAG:
             chunks = self.search_user_uploads(query, user_id, uploads_bucket)
             if chunks:
                 context += "\n\nUser Uploaded Documents:\n" + "\n---\n".join(chunks)
+        if meal_plan:
+            meal_plan_text = "\n".join(f"- {day}: {meal}" for day, meal in meal_plan.items() if meal)
+            if meal_plan_text:
+                context += f"\n\nUser's Current Meal Plan:\n{meal_plan_text}"
 
-        # Build system prompt
-        profile_lines = ""
-        if user_profile:
-            if user_profile.get('dietary'):
-                profile_lines += f"\nUser dietary preferences: {', '.join(user_profile['dietary'])}"
-            if user_profile.get('healthGoal'):
-                profile_lines += f"\nUser health goal: {user_profile['healthGoal']}"
-            if user_profile.get('allergies'):
-                profile_lines += f"\nUser allergies: {', '.join(user_profile['allergies'])}"
-
-        system_prompt = (
-            "You are MealBuddy, a friendly AI meal planning assistant.\n\n"
-            "TOOL USE RULES:\n"
-            "- Only call tools when the user explicitly asks to save, add, plan, or log something.\n"
-            "- If the user asks to SEE, SHOW, FIND, or GET recipes — just answer with text, do NOT call any tools.\n"
-            "- When planning a week, call add_to_meal_plan once per day (Monday-Sunday) only if the user asks to save/add to planner.\n"
-            "- Never reference recipe numbers. Use only the recipe's actual name.\n"
-            "- If recipe context is limited, use your own culinary knowledge to give complete recipes with ingredients and steps.\n"
-            "- After calling tools, briefly confirm what was done."
-            + profile_lines
-        )
-
-        # Capture tool calls for the frontend
+        # Capture tool calls for the frontend (agents write into this list via closures)
         tool_calls_log: List[Dict] = []
 
-        # Build Strands tools that delegate to the existing tool_handler
-        def make_tool(name: str, description: str, fn):
-            fn.__name__ = name
-            fn.__doc__ = description
-            return tool(fn)
+        # Wrap tool_handler to also log calls
+        def logged_tool(name, inp):
+            result = tool_handler(name, inp) if tool_handler else {}
+            tool_calls_log.append({"tool": name, "input": inp, "result": result})
+            return result
 
-        @tool
-        def search_recipes_tool(query: str, top_k: int = 5) -> str:
-            """Search for recipes based on ingredients, dietary preferences, or meal type."""
-            result = tool_handler("search_recipes", {"query": query, "top_k": top_k}) if tool_handler else {}
-            tool_calls_log.append({"tool": "search_recipes", "input": {"query": query}, "result": result})
-            return json.dumps(result)
-
-        @tool
-        def add_to_favorites(recipe_name: str, recipe_content: str = "") -> str:
-            """Add a recipe to the user's favourites list."""
-            result = tool_handler("add_to_favorites", {"recipe_name": recipe_name, "recipe_content": recipe_content}) if tool_handler else {}
-            tool_calls_log.append({"tool": "add_to_favorites", "input": {"recipe_name": recipe_name}, "result": result})
-            return json.dumps(result)
-
-        @tool
-        def add_to_meal_plan(day: str, meal_name: str) -> str:
-            """Add a meal to the weekly meal plan for a specific day (Monday-Sunday)."""
-            result = tool_handler("add_to_meal_plan", {"day": day, "meal_name": meal_name}) if tool_handler else {}
-            tool_calls_log.append({"tool": "add_to_meal_plan", "input": {"day": day, "meal_name": meal_name}, "result": result})
-            return json.dumps(result)
-
-        @tool
-        def add_to_shopping_list(items: list) -> str:
-            """Add a list of ingredients to the shopping list."""
-            result = tool_handler("add_to_shopping_list", {"items": items}) if tool_handler else {}
-            tool_calls_log.append({"tool": "add_to_shopping_list", "input": {"items": items}, "result": result})
-            return json.dumps(result)
-
-        @tool
-        def log_nutrition(meal_type: str, name: str, calories: float,
-                          protein: float = 0, carbs: float = 0, fats: float = 0) -> str:
-            """Log a meal with nutrition information. meal_type must be breakfast, lunch, dinner, or snack."""
-            inp = {"meal_type": meal_type, "name": name, "calories": calories,
-                   "protein": protein, "carbs": carbs, "fats": fats}
-            result = tool_handler("log_nutrition", inp) if tool_handler else {}
-            tool_calls_log.append({"tool": "log_nutrition", "input": inp, "result": result})
-            return json.dumps(result)
-
-        @tool
-        def get_nutrition_stats() -> str:
-            """Get today's nutrition statistics and remaining calories/macros."""
-            result = tool_handler("get_nutrition_stats", {}) if tool_handler else {}
-            tool_calls_log.append({"tool": "get_nutrition_stats", "input": {}, "result": result})
-            return json.dumps(result)
-
-        # Inject chat history
+        # Build chat history string
         history_text = ""
         for m in (chat_history or [])[-6:]:
             role = m.get("role", "")
@@ -216,19 +153,23 @@ class BedrockRAG:
         )
 
         try:
-            model = BedrockModel(
-                model_id="anthropic.claude-3-haiku-20240307-v1:0",
-                region_name="ap-southeast-2",
-                max_tokens=2000,
-                temperature=0.7,
-            )
-            agent = Agent(
-                model=model,
-                system_prompt=system_prompt,
-                tools=[search_recipes_tool, add_to_favorites, add_to_meal_plan,
-                       add_to_shopping_list, log_nutrition, get_nutrition_stats],
-            )
-            result = agent(full_query)
+            from models.agents.planner_agent import make_planner_agent
+            from models.agents.nutrition_agent import make_nutrition_agent
+            from models.agents.document_agent import make_document_agent
+
+            planner = make_planner_agent(logged_tool, meal_plan or {})
+            nutrition = make_nutrition_agent(logged_tool, user_profile or {})
+            document = make_document_agent(context, user_profile or {})
+
+            q = query.lower()
+            if any(w in q for w in ["restriction", "allergy", "document", "pdf", "nutritionist", "my file", "uploaded"]):
+                active_agent, agent_input = document, query
+            elif any(w in q for w in ["calorie", "macro", "remaining", "log", "track", "snack", "how much", "how many"]):
+                active_agent, agent_input = nutrition, full_query
+            else:
+                active_agent, agent_input = planner, full_query
+
+            result = active_agent(agent_input)
             response_text = str(result).strip()
 
             return {"response": response_text, "tool_calls": tool_calls_log}

@@ -3,9 +3,9 @@
 ## 🍳 Core Features
 
 ### 1. AI-Powered Chat
+- Multi-agent architecture: Coordinator routes to specialist Planner, Nutrition, and Document agents
 - RAG-based responses using Amazon Bedrock (Claude 3 Haiku)
-- Agentic capabilities via Strands Agent with 6 built-in tools
-- Semantic recipe search with Amazon Titan Embeddings V2 (1024-dim, cosine similarity)
+- Semantic recipe search with Amazon Titan Embeddings V2 (cosine similarity)
 - Multi-chat management (create, switch, delete)
 - Document upload and RAG over user files (.txt, .docx, .pdf)
 
@@ -58,26 +58,27 @@
 
 ---
 
-## 🤖 Strands Agent Tools
+## 🤖 Multi-Agent System (Strands)
 
-The agent (powered by Strands + Claude 3 Haiku) autonomously executes the following tools:
+MealBuddy uses a **coordinator + specialist agent** pattern powered by Strands and Claude 3 Haiku on Amazon Bedrock.
 
-| Tool | Description |
-|------|-------------|
-| `search_recipes` | Semantic search over S3-indexed recipes |
-| `add_to_favorites` | Bookmarks a recipe to the user's favourites |
-| `add_to_meal_plan` | Adds a meal to a specific day (Monday–Sunday) |
-| `add_to_shopping_list` | Appends ingredients to the shopping list |
-| `log_nutrition` | Logs a meal with calories and macros |
-| `get_nutrition_stats` | Returns today's nutrition totals and remaining budget |
+```
+User Message
+     │
+     ▼
+Coordinator (intent router)
+     │
+     ├──► 🥗 Planner Agent      → meal planning, shopping list, favourites
+     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, snack suggestions
+     └──► 📄 Document Agent     → RAG over uploaded PDFs, dietary restrictions
+```
+
+| Agent | Triggers | Tools |
+|-------|----------|-------|
+| **Planner Agent** | plan, meal, shopping, grocery, favourite | `add_to_meal_plan`, `add_to_shopping_list`, `add_to_favorites` |
+| **Nutrition Agent** | calorie, macro, remaining, log, track, snack | `get_nutrition_stats`, `log_nutrition` |
+| **Document Agent** | restriction, allergy, document, pdf, my file | none (pure RAG) |
 
 All tool calls are logged and returned to the frontend for transparent visual feedback.
 
-Example of keyword-based intent detection that triggers agent actions:
-
-| Intent | Keywords | Action |
-|--------|----------|--------|
-| Plan Week | "plan my week" | Auto-populates 7-day planner |
-| Shopping List | "shopping list" | Extracts ingredients from plan |
-| Save Favorite | "save this" | Bookmarks recipe |
-| Add to Plan | "add to Monday" | Adds meal to specific day |
+**Why multi-agent?** Each specialist agent has a short, focused system prompt — this significantly improves Claude 3 Haiku's reliability compared to a single agent handling all intents.

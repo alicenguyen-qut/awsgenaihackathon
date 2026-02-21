@@ -1,7 +1,23 @@
 """Nutrition analytics calculations"""
 from datetime import datetime, timedelta
 
-def calculate_nutrition_stats(logs, date):
+CALORIE_GOALS = {
+    'weight_loss': 1500,
+    'lose weight': 1500,
+    'maintain': 2000,
+    'maintain weight': 2000,
+    'muscle gain': 2500,
+    'build muscle': 2500,
+    'gain muscle': 2500,
+}
+DEFAULT_CALORIE_GOAL = 2000
+
+def get_calorie_goal(health_goal: str) -> int:
+    if not health_goal:
+        return DEFAULT_CALORIE_GOAL
+    return CALORIE_GOALS.get(health_goal.lower(), DEFAULT_CALORIE_GOAL)
+
+def calculate_nutrition_stats(logs, date, health_goal: str = ''):
     """Calculate nutrition stats for a specific date"""
     date_logs = [l for l in logs if l['date'] == date]
     
@@ -11,7 +27,14 @@ def calculate_nutrition_stats(logs, date):
         'carbs': sum(l['carbs'] for l in date_logs),
         'fats': sum(l['fats'] for l in date_logs)
     }
-    return {'stats': total, 'meal_count': len(date_logs)}
+    calorie_goal = get_calorie_goal(health_goal)
+    remaining = max(0, calorie_goal - total['calories'])
+    return {
+        'stats': total,
+        'meal_count': len(date_logs),
+        'calorie_goal': calorie_goal,
+        'calories_remaining': remaining
+    }
 
 def calculate_period_analytics(logs, period):
     """Calculate analytics for a time period"""

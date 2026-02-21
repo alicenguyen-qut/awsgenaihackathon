@@ -512,8 +512,10 @@ def chat():
                     
                     elif tool_name == "get_nutrition_stats":
                         today = datetime.now().strftime('%Y-%m-%d')
-                        stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today)
-                        return {"success": True, "stats": stats}
+                        health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
+                        stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today, health_goal)
+                        meal_plan = user_data.get('meal_plan', {})
+                        return {"success": True, "stats": stats, "meal_plan": meal_plan}
                     
                     else:
                         return {"success": False, "error": f"Unknown tool: {tool_name}"}
@@ -524,7 +526,7 @@ def chat():
                     traceback.print_exc()
                     return {"success": False, "error": str(e)}
             
-            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []), user_id=user_id, uploads_bucket=S3_BUCKET)
+            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []), user_id=user_id, uploads_bucket=S3_BUCKET, meal_plan=user_data.get('meal_plan', {}))
             response = result.get('response', '')
             tool_calls = result.get('tool_calls', [])
             
@@ -721,7 +723,8 @@ def get_nutrition_stats():
         user_id = get_user_session()
         user_data = storage.load_user_data(user_id)
         date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-        result = calculate_nutrition_stats(user_data.get('nutrition_logs', []), date)
+        health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
+        result = calculate_nutrition_stats(user_data.get('nutrition_logs', []), date, health_goal)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

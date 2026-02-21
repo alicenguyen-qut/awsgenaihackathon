@@ -86,7 +86,7 @@ Flask UI (HTML/CSS/JS)
 AWS Elastic Beanstalk  (t3.micro EC2)
  │
  ├──► Amazon Bedrock
- │     ├── Claude 3 Haiku          (Conversational AI + Strands Agent)
+ │     ├── Claude 3 Haiku          (Conversational AI + Strands Multi-Agent)
  │     └── Titan Embeddings V2     (Semantic recipe & document search)
  │
  └──► Amazon S3
@@ -96,15 +96,28 @@ AWS Elastic Beanstalk  (t3.micro EC2)
        └── uploads/                (User-uploaded documents + embeddings)
 ```
 
+**Multi-Agent Architecture (Strands)**
+
+```
+User Message
+     │
+     ▼
+Coordinator (intent router in bedrock_rag.py)
+     │
+     ├──► 🥗 Planner Agent      → meal planning, shopping list, favourites
+     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, snack suggestions
+     └──► 📄 Document Agent     → RAG over uploaded PDFs, dietary restrictions
+```
+
 **AWS Services Selected with a focus on demonstrating PoC and being cost-optimised for Hackathon Demo**
 
 | Service | What it is used for | Why chosen |
 |---|---|---|
 | Elastic Beanstalk (t3.micro) | Web app hosting | Rapidly deploys and manages application without much infrastructure provisioning  |
 | Amazon S3 | Data storage | Data storage in cloud at near-zero cost at demo scale |
-| Amazon Bedrock - Claude 3 Haiku | LLM + agent reasoning | Fast and cost-saving Bedrock model, sufficient to demonstrate the LLM capability |
+| Amazon Bedrock - Claude 3 Haiku | LLM + multi-agent reasoning | Fast and cost-saving Bedrock model powering 3 specialist Strands agents |
 | Amazon Bedrock - Titan Embeddings V2 | Semantic search | Fully managed, no GPU infra, optimises for cost and retrieval performance without sacrificing accuracy |
-| Strands Agents (open source) | Agentic tool orchestration | Easy to use, fast to buid, especially with tools calling and orchestration |
+| Strands Agents (open source) | Multi-agent orchestration | Coordinator routes to specialist agents (Planner, Nutrition, Document) for focused, reliable responses |
 | NumPy cosine similarity | RAG retrieval | Embedding search - quick, easy and no-cost to implement |
 | CloudFormation | IaC / CI-CD | Deploys entire stack (Beanstalk app, S3, IAM) in one template - reusable and faster deployment compared to ClicksOp |
 
@@ -177,4 +190,4 @@ AWS Fargate (ECS) ◄── Auto Scaling
 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
 
 
-*Built by MealBuddy team and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Agent & Kiro*
+*Built by MealBuddy team and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Multi-Agent & Kiro*
