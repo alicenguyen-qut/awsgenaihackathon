@@ -93,15 +93,19 @@ async function sendMessage() {
         const actionableCalls = data.tool_calls ? data.tool_calls.filter(c => mutatingTools.includes(c.tool)) : [];
         if (actionableCalls.length > 0) {
             displayToolCalls(actionableCalls);
-            // Reload context after agent actions
             await loadAgentContext();
+            // Refresh open modals
+            if (!document.getElementById('mealPlannerModal').classList.contains('hidden')) loadMealPlan();
+            if (!document.getElementById('shoppingListModal').classList.contains('hidden')) loadShoppingList();
         }
         
-        // Legacy agent actions (for local mode)
-        const actions = await executeAgentActions(query, data.response);
-        if (actions && actions.length > 0) {
-            displayAgentActions(actions);
-            await loadAgentContext();
+        // Legacy agent actions (for local mode only — skip if backend already fired tool_calls)
+        if (actionableCalls.length === 0) {
+            const actions = await executeAgentActions(query, data.response);
+            if (actions && actions.length > 0) {
+                displayAgentActions(actions);
+                await loadAgentContext();
+            }
         }
     } catch (error) {
         addMessage('Error connecting', false);

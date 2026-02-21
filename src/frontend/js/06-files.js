@@ -9,9 +9,15 @@ async function uploadFile() {
         const formData = new FormData();
         formData.append('file', file);
         
-        await fetch('/upload', { method: 'POST', body: formData });
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!data.success) {
+            showAlert(data.error || `Failed to upload ${file.name}`, 'error');
+            return;
+        }
     }
     
+    showAlert(`${files.length} file(s) uploaded successfully!`, 'success');
     await loadFiles();
     fileInput.value = '';
 }

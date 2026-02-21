@@ -6,7 +6,7 @@
 - Alice Nguyen – alice.nhnt@gmail.com
 - Evelyn Le – evelyn.le.contact@gmail.com
 
----
+
 
 ## 1. Use Case
 
@@ -60,21 +60,17 @@ The scale of the problem translates directly into market opportunity:
 | **Cronometer** | Detailed micronutrient tracking | Complex UI, no conversational AI, no autonomous meal planning |
 | **ChatGPT / general LLMs** | Ad-hoc nutrition Q&A | No persistent profile, no meal plan memory, no document RAG, no structured tracking |
 
-
 **MealBuddy's competitive moat:** Few existing solutions combine a persistent user profile, conversational AI, document ingestion (RAG), and autonomous multi-step action in a single nutrition product. Every existing app is reactive - open it, input data, it shows a number. MealBuddy is designed to *plan with users*, not just *record after them* - making personalised nutrition support accessible to anyone, at the cost of a conversation.
 
 **Potential business partnership opportunities:** Meal kit services like HelloFresh and Marley Spoon are a natural integration opportunity - MealBuddy could recommend their kits when users want a no-prep option, or auto-populate a shopping list that links to their catalogue. Partnerships with grocery retailers (e.g. Woolworths, Coles) could take this further - enabling users to purchase ingredients directly from within the app, turning a meal plan into a completed grocery order in one step.
 
 *Sources: [AIHW Overweight and Obesity (2024)](https://www.aihw.gov.au/reports/overweight-obesity/overweight-and-obesity/contents/overweight-and-obesity); [AIHW Food & Nutrition (2024)](https://www.aihw.gov.au/reports/food-nutrition/nutrition); [Vively, How Much Does It Cost to See a Dietitian in Australia (2024)](https://www.vively.com.au/post/how-much-does-it-cost-to-see-a-dietitian-in-australia); [AIHW Australian Burden of Disease Study (2022)](https://www.aihw.gov.au/reports/burden-of-disease/australian-burden-of-disease-study-2022); [GBD Diet Collaborators, The Lancet (2019)](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)30041-8/fulltext); [Teixeira et al., IJBNPA (2015)](https://ijbnpa.biomedcentral.com/articles/10.1186/1479-5868-12-S1-S4)*
 
----
-
 ## 2. Architecture Diagrams
 
 ### 2.1 Hackathon Demo Architecture
 
 The below architecture was chosen to validate the full product concept end-to-end within the constraints of a hackathon - fast to deploy, zero infrastructure overhead, and cheap enough to run without budget concerns. 
-
 
 ```
 User
@@ -102,12 +98,16 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 User Message
      │
      ▼
-Coordinator (intent router in bedrock_rag.py)
+Coordinator Agent
      │
      ├──► 🥗 Planner Agent      → meal planning, shopping list, favourites
      ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, snack suggestions
      └──► 📄 Document Agent     → RAG over uploaded PDFs, dietary restrictions
 ```
+**Hackathon Architecture Diagram**
+
+<img src="architecture_diagrams/architecture_hackathon.png" width="800">
+
 
 **AWS Services Selected with a focus on demonstrating PoC and being cost-optimised for Hackathon Demo**
 
@@ -121,52 +121,69 @@ Coordinator (intent router in bedrock_rag.py)
 | NumPy cosine similarity | RAG retrieval | Embedding search - quick, easy and no-cost to implement |
 | CloudFormation | IaC / CI-CD | Deploys entire stack (Beanstalk app, S3, IAM) in one template - reusable and faster deployment compared to ClicksOp |
 
-![Hackathon Architecture](architecture_diagrams/architecture_hackathon.png)
-
 ---
 
 ### 2.2 Future Enhancement Architecture
 
-The hackathon stack proves the concept. Scaling to real users requires future enhancements built for concurrency, durability, and observability.
+The hackathon stack proves the concept. The below future architecture introduces infrastructure-as-code, containerised scaling, secure identity boundaries, vector persistence, and full-stack observability to support real-world concurrency, durability, scalability, and intelligent agent workflows.
 
 ```
-Users
+Users (Web Browser)
  │
  ▼
-Amazon CloudFront  (CDN + WAF)
+Amazon CloudFront  (Edge CDN + WAF + DDoS Protection)
  │
  ▼
 Application Load Balancer
  │
  ▼
-AWS Fargate (ECS) ◄── Auto Scaling
+AWS ECS Fargate (Containerised Compute, Auto Scaling)
+ │
+ ├──► AWS Bedrock AgentCore
+ │      ├── Identity
+ │      ├── Tools
+ │      ├── Memory
+ │      ├── Runtime
+ │      └── GenAI Observability (OpenTelemetry of LLM traces and monitoring)
  │
  ├──► Amazon Bedrock
- │     ├── Claude Sonnet 4.6/ Opus   (upgraded model tier, better reasoning models)
- │     └── Titan Embeddings V2
+ │      ├── Claude Sonnet / Opus (Reasoning LLMs)
+ │      └── Titan Embeddings V2 (Embedding)
  │
- ├──► Amazon OpenSearch Serverless  (vector store for embeddings)
+ ├──► Amazon OpenSearch Serverless  (Vector Knowledge Base)
  │
- ├──► Amazon DynamoDB               (stores user profiles, sessions, meal plans)
+ ├──► Amazon DynamoDB  (User metadata, sessions)
  │
- ├──► Amazon S3                     (stores uploads artifacts, recipe assets)
+ ├──► Amazon S3  (Object storage & artifacts)
  │
- ├──► Amazon Cognito                (user authentication)
+ ├──► Redis Cache  (RAG + LLM response caching)
  │
- └──► Amazon CloudWatch + X-Ray     (observability)
+ └──► Amazon CloudWatch + X-Ray (App Monitoring)
+
+Infrastructure:
+ ├── AWS CloudFormation (IaC deployment)
+ ├── Amazon ECR (Container registry)
+ └── IAM Roles (Least-privilege access control)
 ```
-(WIP)
-![Future Architecture](architecture_diagrams/architecture_future.png)
+**Future Architecture Diagram**
 
-**Future upgrades and rationale**
+<img src="architecture_diagrams/architecture_future.png" width="800">
 
-- **Fargate (ECS)** replaces Beanstalk t3.micro - horizontal auto-scaling with no server management; handles concurrent users without cold-start latency
-- **OpenSearch Serverless** replaces NumPy in-memory search - persistent, scalable vector index
-- **DynamoDB** replaces S3 storage for user session data - single-digit millisecond reads, TTL for session expiry, no file I/O
-- **CloudFront + WAF** - edge caching for static assets, DDoS protection, geo-restriction
-- **Cognito** - managed auth with MFA, social login, and JWT
-- **CloudWatch + X-Ray** - distributed tracing across Bedrock calls, tool invocations, and S3 ops; essential for debugging agentic workflows at scale
-- **Claude Sonnet/Opus LLM models** - higher reasoning quality for complex multi-day meal planning and document analysis as user base grows
+
+| Layer | Service | What it is used for | Why chosen |
+|---|---|---|---|
+| **Compute & Infrastructure** | ECS Fargate | Containerised compute | Horizontally auto-scaled, no server management, high concurrency |
+| | CloudFormation (IaC) | CI/CD deployment | Reusable, automated stack deployment |
+| | Amazon ECR + IAM Roles | Container registry + access control | Least-privilege access, replaces embedded credentials |
+| **Intelligent Agent** | AWS Bedrock AgentCore | Agent orchestration | Identity boundaries, tool control, memory persistence, GenAI observability |
+| | Claude Sonnet / Opus | LLM reasoning | Complex multi-step planning, structured outputs, advanced document analysis |
+| | Titan Embeddings V2 | Semantic search & embeddings | Production-grade RAG, knowledge base ingestion |
+| **Data & Retrieval** | OpenSearch Serverless | Vector knowledge base | Persistent, scalable vector index for production RAG |
+| | DynamoDB | User metadata & sessions | Single-digit ms reads, TTL-based expiry |
+| | Amazon S3 | Object storage | Durable storage for uploads, assets, static content |
+| | Redis Cache | Response & RAG caching | Reduces Bedrock latency and cost under load |
+| **Edge, Security & Observability** | CloudFront + WAF | CDN + security | DDoS protection, rate limiting, geo-restriction |
+| | CloudWatch + X-Ray | Monitoring & tracing | Distributed tracing across Fargate, Bedrock, OpenSearch; agentic workflow debugging |
 
 ---
 

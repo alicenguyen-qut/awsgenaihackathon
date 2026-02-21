@@ -4,11 +4,16 @@ from datetime import datetime, timedelta
 CALORIE_GOALS = {
     'weight_loss': 1500,
     'lose weight': 1500,
+    'weight-loss': 1500,
     'maintain': 2000,
     'maintain weight': 2000,
+    'maintenance': 2000,
     'muscle gain': 2500,
     'build muscle': 2500,
     'gain muscle': 2500,
+    'muscle-gain': 2500,
+    'heart-health': 1800,
+    'energy-boost': 2200,
 }
 DEFAULT_CALORIE_GOAL = 2000
 
