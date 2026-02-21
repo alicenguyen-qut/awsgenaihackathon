@@ -46,7 +46,7 @@ Personalised nutrition guidance has always been expensive and time-consuming. Me
 
 ---
 
-## 2. Architecture
+## 2. Architecture Diagrams
 
 ### Hackathon Demo Architecture:
 
