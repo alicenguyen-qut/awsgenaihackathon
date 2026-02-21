@@ -1,6 +1,6 @@
 # Developer Guide
 
-## 1. Architecture
+## 1. Overview
 ```
 User → Flask UI → Elastic Beanstalk → Bedrock (Claude 3 Haiku + Titan Embeddings V2)
                       ↓
