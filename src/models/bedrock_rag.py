@@ -1,5 +1,6 @@
 import boto3
 import json
+import re
 import numpy as np
 import time
 from typing import List, Dict, Any, Optional
@@ -31,8 +32,10 @@ class BedrockRAG:
             
             recipes = []
             for item in data:
+                # Strip leading number prefix e.g. "recipe_001_grilled_chicken_salad" -> "Grilled Chicken Salad"
+                clean_name = re.sub(r'^recipe_\d+_', '', item['recipe_id'].replace('.txt', '')).replace('_', ' ').title()
                 recipes.append({
-                    'name': item['recipe_id'].replace('.txt', '').replace('_', ' ').title(),
+                    'name': clean_name,
                     'description': item['text'],
                     'tags': [],
                     'calories': 0
@@ -125,21 +128,14 @@ class BedrockRAG:
         
         try:
             # Build system prompt
-            system_prompt = """You are MealBuddy, an autonomous AI meal planning assistant with the ability to take actions on behalf of the user.
+            system_prompt = """You are MealBuddy, an autonomous AI meal planning assistant.
 
-            You can:
-            - Search for recipes
-            - Add recipes to favorites
-            - Plan meals for the week
-            - Generate shopping lists
-            - Log nutrition information
-            - Track daily nutrition stats
-
-            When users ask you to do something (like "plan my week" or "add this to favorites"), proactively use the available tools to help them.
-            Be conversational and explain what actions you're taking.
-
-            If the provided recipe context is limited or doesn't match the user's request, use your own culinary knowledge to provide helpful, accurate answers with full ingredients and step-by-step instructions.
-            Always give complete, actionable responses even when context is sparse."""
+            CRITICAL RULES:
+            - When the user asks to add meals to a plan, plan a week, or save anything - you MUST call the appropriate tool immediately. Do NOT just describe what you would do.
+            - When planning a week, call add_to_meal_plan once for EACH day (Monday through Sunday) with a specific meal name.
+            - Never reference recipe numbers (e.g. "Recipe 001"). Always use only the recipe's actual name.
+            - If recipe context is limited, use your own culinary knowledge to suggest real, complete recipes with ingredients and steps.
+            - Always confirm what actions you took after calling tools."""
             
             if user_profile:
                 dietary = user_profile.get('dietary', [])
