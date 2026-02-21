@@ -6,19 +6,19 @@ from diagrams.aws.storage import S3
 from diagrams.aws.management import Cloudformation, Cloudwatch
 from diagrams.aws.database import Dynamodb
 from diagrams.aws.network import CloudFront, ALB
-from diagrams.aws.security import Cognito
+from diagrams.aws.security import Cognito, IAMRole
 from diagrams.aws.analytics import AmazonOpensearchService as Opensearch
 from diagrams.onprem.client import User
 
 GRAPH = {
     "fontsize": "13",
     "bgcolor": "#f8f9fa",
-    "pad": "1.0",
+    "pad": "1.5",
     "splines": "ortho",
-    "nodesep": "0.9",
-    "ranksep": "1.4",
+    "nodesep": "1.8",
+    "ranksep": "2.8",
 }
-CLUSTER = {"bgcolor": "#e8f4fd", "fontsize": "12", "fontcolor": "#1a1a2e"}
+CLUSTER = {"bgcolor": "#e8f4fd", "fontsize": "12", "fontcolor": "#1a1a2e", "margin": "24"}
 
 def e(label, dashed=False):
     """Edge with label close to the line."""
@@ -39,29 +39,31 @@ with Diagram(
     filename="architecture_diagrams/architecture_hackathon",
     outformat="png",
     show=False,
-    direction="LR",
+    direction="TB",
     graph_attr=GRAPH,
 ):
     user = User("User\n(Browser)")
 
-    with Cluster("AWS  ap-southeast-2", graph_attr=CLUSTER):
+    with Cluster("AWS ap-southeast-2", graph_attr=CLUSTER):
         cfn = Cloudformation("CloudFormation\nIaC · CI/CD")
 
         with Cluster("Elastic Beanstalk  t3.micro", graph_attr=CLUSTER):
-            app = ElasticBeanstalk("Flask App\n+ Strands Agent\n(tool orchestration)")
+            app = ElasticBeanstalk("Flask App\n+ Strands Agent")
+            role = IAMRole("EC2 Instance Role\nBedrock + S3 access")
 
         with Cluster("Amazon Bedrock", graph_attr=CLUSTER):
-            claude = Bedrock("Claude 3 Haiku\nChat · Reasoning · Tools")
-            titan = SagemakerModel("Titan Embeddings V2\nText → Vector")
+            claude = Bedrock("Claude 3 Haiku\nChat · Reasoning")
+            titan = SagemakerModel("Titan Embeddings V2")
 
         with Cluster("Amazon S3  (single bucket)", graph_attr=CLUSTER):
-            s3 = S3("mealbuddy-data\nrecipes/  embeddings/\nsessions/  uploads/")
+            s3 = S3("mealbuddy-data\nrecipes/ embeddings/\nsessions/ uploads/")
 
     user >> e("HTTPS request") >> app
     app >> e("invoke LLM\nchat + agentic tools") >> claude
-    app >> Edge(xlabel="embed user query\n& uploaded docs", color="#4a90d9", fontsize="9", fontcolor="#333333") >> titan
+    app >> e("embed user query\n& uploaded docs") >> titan
     app >> e("read/write\nprofiles · meal plans\nchat history") >> s3
-    titan >> e("load recipe embeddings\ncosine similarity (NumPy)") >> s3
+    role >> e("grants access", dashed=True) >> app
+    titan >> e("load recipe embeddings") >> s3
     cfn >> e("provisions app\n+ IAM role", dashed=True) >> app
     cfn >> e("provisions bucket\n+ permissions", dashed=True) >> s3
 
@@ -71,7 +73,7 @@ with Diagram(
     filename="architecture_diagrams/architecture_future",
     outformat="png",
     show=False,
-    direction="LR",
+    direction="TB",
     graph_attr=GRAPH,
 ):
     user = User("Users")

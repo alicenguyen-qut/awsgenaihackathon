@@ -111,7 +111,6 @@ awsgenaihackathon/
 ├── scripts/
 │   ├── deploy.sh                  # Deploys AWS resources
 │   ├── cleanup.sh                 # Destroys AWS resources
-│   ├── generate_diagram.py        # Draws AWS architecture diagrams
 │   └── index_recipes.py           # Indexes recipes → S3 embeddings
 ├── src/
 │   ├── app.py                     # Flask app + all API routes
