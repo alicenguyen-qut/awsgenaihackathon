@@ -1,4 +1,4 @@
-# 🍳 MealBuddy — Your Daily Buddy for Smarter Eating Habits
+# 🍳 MealBuddy - Your Daily Buddy for Smarter Eating Habits
 
 > **ANZ Diversity Hackathon 2026 - Team 54 - MealBuddy**
 
@@ -18,14 +18,16 @@ The intent to eat better is not the problem. Research consistently shows that **
 
 ### Value Proposition:
 
-MealBuddy brings recipe search, meal planning, shopping lists, and nutrition tracking together in a **single personalised conversation**. Set your dietary preferences once. From that point, every interaction is personalised:
+MealBuddy delivers **personalised, proactive nutrition guidance** - combining recipe search, meal planning, shopping lists, and nutrition tracking in a **single AI-powered conversation**.
 
-- Ask for a high-protein dinner → get a complete recipe with ingredients and steps
-- Say "plan my week" → seven days populate automatically via autonomous agent
-- Upload a PDF from your nutritionist → MealBuddy reads and applies it
-- Ask what's left in your calorie budget → get a real-time answer
-
-**What previously took 2–3 hours of weekly planning takes under 3 minutes.**
+| Value Driver | What MealBuddy Does |
+|---|---|
+| **Time savings** | Reduces 2–3 hours of weekly meal planning to under 10 minutes |
+| **Personalisation** | Personalises based on users' dietary preferences, goals, and restrictions across every user interaction |
+| **Accessibility** | Available 24/7 at affordable cost |
+| **Proactive planning** | Autonomously generates a full week of meals - no manual input required |
+| **Document intelligence** | Reads and applies user-upload data directly into the meal plan |
+| **Real-time tracking** | Instant answers on remaining calorie budget, without manual logging |
 
 ### Who Is This For:
 
@@ -39,12 +41,12 @@ MealBuddy brings recipe search, meal planning, shopping lists, and nutrition tra
 The scale of the problem translates directly into market opportunity:
 
 - With **66% of Australian adults overweight or obese** and diet-related disease costing **$6 billion/year**, there is clear government and consumer urgency to act *(AIHW, 2022)*
-- Personalised nutrition support is inaccessible to most — a dietitian costs ~**AUD 200/session** and wait times are long *(Vively, 2024)* — creating a large underserved population willing to pay for a cheaper, always-available alternative
-- **Chronic Disease Management plans** under Medicare already fund dietitian visits, signalling a future pathway for MealBuddy to integrate with the healthcare system *(Australian Government)*
+- Personalised nutrition support is inaccessible to most - a dietitian costs ~**AUD 200/session** and wait times are long *(Vively, 2024)* - creating a large underserved population willing to pay for a cheaper, always-available alternative
+
 
 **Bottom-up market sizing (Australia):**
-- Australia has ~20.5 million adults. At 66% overweight or obese, that's ~**13.5 million adults** with a direct health incentive to improve their diet *(AIHW, 2024)* — this is the TAM
-- Of these, the digitally active cohort aged 25–54 (the primary health-app demographic) represents roughly **~8 million Australians** *(ABS, 2021 Census)* — this is the SAM
+- Australia has ~20.5 million adults. At 66% overweight or obese, that's ~**13.5 million adults** with a direct health incentive to improve their diet *(AIHW, 2024)* - this is the TAM
+- Of these, the digitally active cohort aged 25–54 (the primary health-app demographic) represents roughly **~8 million Australians** *(ABS, 2021 Census)* - this is the SAM
 - Capturing just **1–2% of SAM** in year 3 = **80,000–160,000 users** at AUD 10–15/month = **AUD 10–29M ARR**
 
 ### Competitive & Partnership Landscape:
@@ -57,8 +59,11 @@ The scale of the problem translates directly into market opportunity:
 | **Cronometer** | Detailed micronutrient tracking | Complex UI, no conversational AI, no autonomous meal planning |
 | **ChatGPT / general LLMs** | Ad-hoc nutrition Q&A | No persistent profile, no meal plan memory, no document RAG, no structured tracking |
 
-**Potential partnership:** Meal kit services like HelloFresh and Marley Spoon are a natural integration opportunity — MealBuddy could recommend their kits when users want a no-prep option, or auto-populate a shopping list that links to their catalogue.
 
+
+**MealBuddy's competitive moat:** Few existing solutions combine a persistent user profile, conversational AI, document ingestion (RAG), and autonomous multi-step action in a single nutrition product. Every existing app is reactive - open it, input data, it shows a number. MealBuddy is designed to *plan with users*, not just *record after them* - making personalised nutrition guidance accessible to anyone, at the cost of a conversation.
+
+**Potential business partnership opportunities:** Meal kit services like HelloFresh and Marley Spoon are a natural integration opportunity - MealBuddy could recommend their kits when users want a no-prep option, or auto-populate a shopping list that links to their catalogue. Partnerships with grocery retailers (e.g. Woolworths, Coles) could take this further - enabling users to purchase ingredients directly from within the app, turning a meal plan into a completed grocery order in one step.
 
 *Sources: [AIHW Overweight and Obesity (2024)](https://www.aihw.gov.au/reports/overweight-obesity/overweight-and-obesity/contents/overweight-and-obesity); [AIHW Food & Nutrition (2024)](https://www.aihw.gov.au/reports/food-nutrition/nutrition); [Vively, How Much Does It Cost to See a Dietitian in Australia (2024)](https://www.vively.com.au/post/how-much-does-it-cost-to-see-a-dietitian-in-australia); [AIHW Australian Burden of Disease Study (2022)](https://www.aihw.gov.au/reports/burden-of-disease/australian-burden-of-disease-study-2022); [GBD Diet Collaborators, The Lancet (2019)](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)30041-8/fulltext); [Teixeira et al., IJBNPA (2015)](https://ijbnpa.biomedcentral.com/articles/10.1186/1479-5868-12-S1-S4)*
 
