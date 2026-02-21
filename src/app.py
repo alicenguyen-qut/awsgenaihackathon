@@ -5,7 +5,7 @@ from docx import Document
 import json
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Import configuration and utilities
 from utils.config import USE_AWS, MOCK_RECIPES, SECRET_KEY, UPLOAD_FOLDER, SESSIONS_FOLDER, MAX_CONTENT_LENGTH
@@ -89,7 +89,7 @@ def login():
             user_data['username'] = username
             user_data['password_hash'] = generate_password_hash(password)
             user_data['nutrition_logs'] = []
-            user_data['streaks'] = {'current': 1, 'longest': 1, 'last_login': datetime.now().strftime('%Y-%m-%d')}
+            user_data['streaks'] = {'current': 1, 'longest': 1, 'last_login': now_aest().strftime('%Y-%m-%d')}
             user_data['favorites'] = []
             user_data['meal_plan'] = {}
             user_data['shopping_list'] = []
@@ -270,7 +270,7 @@ def new_chat():
     new_chat = {
         'id': chat_id,
         'title': 'New Chat',
-        'created_at': datetime.now().isoformat(),
+        'created_at': now_aest().isoformat(),
         'messages': []
     }
     
@@ -345,7 +345,7 @@ def upload_file():
             'filename': filename,
             'filepath': filepath,
             'content': content,
-            'uploaded_at': datetime.now().isoformat()
+            'uploaded_at': now_aest().isoformat()
         }
         
         if 'uploaded_files' not in user_data:
@@ -424,7 +424,7 @@ def chat():
         new_chat = {
             'id': chat_id,
             'title': query[:50] if len(query) > 50 else query,
-            'created_at': datetime.now().isoformat(),
+            'created_at': now_aest().isoformat(),
             'messages': []
         }
         user_data['chats'].append(new_chat)
@@ -497,21 +497,21 @@ def chat():
                         
                         log = {
                             'id': str(uuid.uuid4()),
-                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            'date': now_aest().strftime('%Y-%m-%d'),
                             'meal_type': tool_input.get('meal_type', 'snack'),
                             'name': tool_input.get('name', ''),
                             'calories': tool_input.get('calories', 0),
                             'protein': tool_input.get('protein', 0),
                             'carbs': tool_input.get('carbs', 0),
                             'fats': tool_input.get('fats', 0),
-                            'timestamp': datetime.now().isoformat()
+                            'timestamp': now_aest().isoformat()
                         }
                         user_data['nutrition_logs'].append(log)
                         storage.save_user_data(user_id, user_data)
                         return {"success": True, "message": f"Logged {log['name']} ({log['calories']} cal)"}
                     
                     elif tool_name == "get_nutrition_stats":
-                        today = datetime.now().strftime('%Y-%m-%d')
+                        today = now_aest().strftime('%Y-%m-%d')
                         health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
                         stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today, health_goal)
                         meal_plan = user_data.get('meal_plan', {})
@@ -543,11 +543,11 @@ def chat():
     
     # Save messages to chat history
     if current_chat:
-        current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': datetime.now().isoformat()})
+        current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': now_aest().isoformat()})
         current_chat['messages'].append({
             'role': 'assistant', 
             'content': response, 
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': now_aest().isoformat(),
             'tool_calls': tool_calls
         })
         
@@ -691,14 +691,14 @@ def log_meal():
         
         log = {
             'id': str(uuid.uuid4()),
-            'date': data.get('date', datetime.now().strftime('%Y-%m-%d')),
+            'date': data.get('date', now_aest().strftime('%Y-%m-%d')),
             'meal_type': data['meal_type'],
             'name': data['name'],
             'calories': data['calories'],
             'protein': data.get('protein', 0),
             'carbs': data.get('carbs', 0),
             'fats': data.get('fats', 0),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': now_aest().isoformat()
         }
         user_data['nutrition_logs'].append(log)
         storage.save_user_data(user_id, user_data)
@@ -711,7 +711,7 @@ def get_nutrition_logs():
     try:
         user_id = get_user_session()
         user_data = storage.load_user_data(user_id)
-        date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+        date = request.args.get('date', now_aest().strftime('%Y-%m-%d'))
         logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == date]
         return jsonify({'logs': logs})
     except Exception as e:
@@ -722,7 +722,7 @@ def get_nutrition_stats():
     try:
         user_id = get_user_session()
         user_data = storage.load_user_data(user_id)
-        date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+        date = request.args.get('date', now_aest().strftime('%Y-%m-%d'))
         health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
         result = calculate_nutrition_stats(user_data.get('nutrition_logs', []), date, health_goal)
         return jsonify(result)
@@ -775,7 +775,7 @@ def get_daily_recommendations():
         user_id = get_user_session()
         user_data = storage.load_user_data(user_id)
         
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = now_aest().strftime('%Y-%m-%d')
         logs = [l for l in user_data.get('nutrition_logs', []) if l['date'] == today]
         profile = user_data.get('nutrition_profile', {})
         
@@ -797,7 +797,7 @@ def chat_stream():
         new_chat_obj = {
             'id': chat_id,
             'title': query[:50] if len(query) > 50 else query,
-            'created_at': datetime.now().isoformat(),
+            'created_at': now_aest().isoformat(),
             'messages': []
         }
         user_data['chats'].append(new_chat_obj)
@@ -867,20 +867,20 @@ def chat_stream():
                             user_data['nutrition_logs'] = []
                         log = {
                             'id': str(uuid.uuid4()),
-                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            'date': now_aest().strftime('%Y-%m-%d'),
                             'meal_type': tool_input.get('meal_type', 'snack'),
                             'name': tool_input.get('name', ''),
                             'calories': tool_input.get('calories', 0),
                             'protein': tool_input.get('protein', 0),
                             'carbs': tool_input.get('carbs', 0),
                             'fats': tool_input.get('fats', 0),
-                            'timestamp': datetime.now().isoformat()
+                            'timestamp': now_aest().isoformat()
                         }
                         user_data['nutrition_logs'].append(log)
                         storage.save_user_data(user_id, user_data)
                         return {'success': True, 'message': f"Logged {log['name']} ({log['calories']} cal)"}
                     elif tool_name == 'get_nutrition_stats':
-                        today = datetime.now().strftime('%Y-%m-%d')
+                        today = now_aest().strftime('%Y-%m-%d')
                         stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today, user_data.get('nutrition_profile', {}).get('healthGoal', ''))
                         return {'success': True, 'stats': stats, 'meal_plan': user_data.get('meal_plan', {})}
                     return {'success': False, 'error': f'Unknown tool: {tool_name}'}
@@ -908,8 +908,8 @@ def chat_stream():
                 yield sse('token', {'text': word + ' '})
 
             if current_chat:
-                current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': datetime.now().isoformat()})
-                current_chat['messages'].append({'role': 'assistant', 'content': response_text, 'timestamp': datetime.now().isoformat(), 'tool_calls': tool_calls})
+                current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': now_aest().isoformat()})
+                current_chat['messages'].append({'role': 'assistant', 'content': response_text, 'timestamp': now_aest().isoformat(), 'tool_calls': tool_calls})
                 if len(current_chat['messages']) == 2:
                     current_chat['title'] = query[:50]
                 storage.save_user_data(user_id, user_data)

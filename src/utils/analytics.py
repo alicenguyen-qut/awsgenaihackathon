@@ -1,5 +1,6 @@
 """Nutrition analytics calculations"""
-from datetime import datetime, timedelta
+from datetime import timedelta
+from utils.helpers import now_aest
 
 CALORIE_GOALS = {
     'weight_loss': 1500,
@@ -44,16 +45,16 @@ def calculate_nutrition_stats(logs, date, health_goal: str = ''):
 def calculate_period_analytics(logs, period):
     """Calculate analytics for a time period"""
     if period == 'today':
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = now_aest().strftime('%Y-%m-%d')
         period_logs = [l for l in logs if l['date'] == today]
     elif period == 'week':
-        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        week_ago = (now_aest() - timedelta(days=7)).strftime('%Y-%m-%d')
         period_logs = [l for l in logs if l['date'] >= week_ago]
     elif period == 'month':
-        month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        month_ago = (now_aest() - timedelta(days=30)).strftime('%Y-%m-%d')
         period_logs = [l for l in logs if l['date'] >= month_ago]
     else:  # year
-        year_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        year_ago = (now_aest() - timedelta(days=365)).strftime('%Y-%m-%d')
         period_logs = [l for l in logs if l['date'] >= year_ago]
     
     if not period_logs:
@@ -98,11 +99,11 @@ def calculate_period_analytics(logs, period):
 
 def update_streak(streaks):
     """Update login streak data"""
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = now_aest().strftime('%Y-%m-%d')
     last = streaks.get('last_login')
     
     if last != today:
-        if last == (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d'):
+        if last == (now_aest() - timedelta(days=1)).strftime('%Y-%m-%d'):
             streaks['current'] += 1
         else:
             streaks['current'] = 1
