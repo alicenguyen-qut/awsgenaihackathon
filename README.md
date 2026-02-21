@@ -54,6 +54,7 @@ At a time when a nutritionist costs $400/month, MealBuddy delivers the same pers
 
 The architecture was deliberately chosen to validate the full product concept end-to-end within the constraints of a hackathon — fast to deploy, zero infrastructure overhead, and cheap enough to run for days without budget concerns. Every service selected has a direct functional justification, not just cost.
 
+
 ```
 User
  │
@@ -73,6 +74,7 @@ AWS Elastic Beanstalk  (t3.micro EC2)
        ├── sessions/               (User profiles, chat history, meal plans)
        └── uploads/                (User-uploaded documents + embeddings)
 ```
+![Hackathon Architecture](architecture_diagrams/architecture_hackathon.png)
 
 **AWS Services Selected — Cost-Optimised for Hackathon Demo**
 
@@ -93,6 +95,8 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 ### Future Production Architecture
 
 The hackathon stack proves the concept. Scaling to real users requires replacing the cost-optimised shortcuts with managed services built for concurrency, durability, and observability.
+
+![Future Architecture](architecture_diagrams/architecture_future.png)
 
 ```
 Users
