@@ -6,6 +6,8 @@
 
 > Built and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Agent & Kiro
 
+📋 [Features](FEATURES.md) · 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
+
 ---
 
 ## 1. Use Case
@@ -143,3 +145,7 @@ AWS Fargate (ECS)           ◄── Auto Scaling
 ## 4. Live Link
 
 🌐 **[mealbuddy.ap-southeast-2.elasticbeanstalk.com](http://mealbuddy.ap-southeast-2.elasticbeanstalk.com)**
+
+---
+
+📋 [Features](FEATURES.md) · 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
