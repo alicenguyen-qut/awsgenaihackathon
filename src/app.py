@@ -177,7 +177,11 @@ def save_nutrition_profile():
         user_data['nutrition_profile'] = {
             'dietary': data.get('dietary', []),
             'healthGoal': data.get('healthGoal', ''),
-            'allergies': data.get('allergies', [])
+            'allergies': data.get('allergies', []),
+            'age': data.get('age'),
+            'weight': data.get('weight'),
+            'height': data.get('height'),
+            'gender': data.get('gender'),
         }
         storage.save_user_data(user_id, user_data)
         
@@ -510,10 +514,14 @@ def chat():
                         storage.save_user_data(user_id, user_data)
                         return {"success": True, "message": f"Logged {log['name']} ({log['calories']} cal)"}
                     
-                    elif tool_name == "get_nutrition_stats":
                         today = now_aest().strftime('%Y-%m-%d')
                         health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
-                        stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today, health_goal)
+                        profile = user_data.get('nutrition_profile', {})
+                        stats = calculate_nutrition_stats(
+                            user_data.get('nutrition_logs', []), today, health_goal,
+                            age=profile.get('age'), weight_kg=profile.get('weight'),
+                            height_cm=profile.get('height'), gender=profile.get('gender')
+                        )
                         meal_plan = user_data.get('meal_plan', {})
                         return {"success": True, "stats": stats, "meal_plan": meal_plan}
                     
@@ -724,7 +732,12 @@ def get_nutrition_stats():
         user_data = storage.load_user_data(user_id)
         date = request.args.get('date', now_aest().strftime('%Y-%m-%d'))
         health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
-        result = calculate_nutrition_stats(user_data.get('nutrition_logs', []), date, health_goal)
+        profile = user_data.get('nutrition_profile', {})
+        result = calculate_nutrition_stats(
+            user_data.get('nutrition_logs', []), date, health_goal,
+            age=profile.get('age'), weight_kg=profile.get('weight'),
+            height_cm=profile.get('height'), gender=profile.get('gender')
+        )
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -881,7 +894,12 @@ def chat_stream():
                         return {'success': True, 'message': f"Logged {log['name']} ({log['calories']} cal)"}
                     elif tool_name == 'get_nutrition_stats':
                         today = now_aest().strftime('%Y-%m-%d')
-                        stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today, user_data.get('nutrition_profile', {}).get('healthGoal', ''))
+                        profile = user_data.get('nutrition_profile', {})
+                        stats = calculate_nutrition_stats(
+                            user_data.get('nutrition_logs', []), today, profile.get('healthGoal', ''),
+                            age=profile.get('age'), weight_kg=profile.get('weight'),
+                            height_cm=profile.get('height'), gender=profile.get('gender')
+                        )
                         return {'success': True, 'stats': stats, 'meal_plan': user_data.get('meal_plan', {})}
                     return {'success': False, 'error': f'Unknown tool: {tool_name}'}
                 except Exception as e:

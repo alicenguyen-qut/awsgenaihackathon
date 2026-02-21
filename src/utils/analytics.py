@@ -2,28 +2,44 @@
 from datetime import timedelta
 from utils.helpers import now_aest
 
-CALORIE_GOALS = {
-    'weight_loss': 1500,
-    'lose weight': 1500,
-    'weight-loss': 1500,
-    'maintain': 2000,
-    'maintain weight': 2000,
-    'maintenance': 2000,
-    'muscle gain': 2500,
-    'build muscle': 2500,
-    'gain muscle': 2500,
-    'muscle-gain': 2500,
-    'heart-health': 1800,
-    'energy-boost': 2200,
-}
 DEFAULT_CALORIE_GOAL = 2000
 
-def get_calorie_goal(health_goal: str) -> int:
-    if not health_goal:
-        return DEFAULT_CALORIE_GOAL
-    return CALORIE_GOALS.get(health_goal.lower(), DEFAULT_CALORIE_GOAL)
+GOAL_ADJUSTMENTS = {
+    'weight_loss': -500, 'lose weight': -500, 'weight-loss': -500,
+    'muscle gain': +300, 'build muscle': +300, 'gain muscle': +300, 'muscle-gain': +300,
+    'heart-health': -200, 'energy-boost': +200,
+    'maintain': 0, 'maintain weight': 0, 'maintenance': 0,
+}
 
-def calculate_nutrition_stats(logs, date, health_goal: str = ''):
+def get_calorie_goal(health_goal: str, age: int = None, weight_kg: float = None,
+                    height_cm: float = None, gender: str = None) -> tuple:
+    """Returns (calorie_goal, breakdown_dict)"""
+    try:
+        if age and weight_kg and height_cm and gender:
+            if gender.lower() in ('male', 'm'):
+                bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
+            else:
+                bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
+            tdee = round(bmr * 1.375)
+            adjustment = GOAL_ADJUSTMENTS.get(health_goal.lower() if health_goal else '', 0)
+            goal = max(1200, tdee + adjustment)
+            return goal, {
+                'method': 'mifflin',
+                'bmr': round(bmr),
+                'tdee': tdee,
+                'adjustment': adjustment,
+                'goal': goal,
+                'inputs': {'age': age, 'weight_kg': weight_kg, 'height_cm': height_cm, 'gender': gender, 'health_goal': health_goal}
+            }
+    except (TypeError, ValueError):
+        pass
+    FIXED = {'weight_loss': 1500, 'lose weight': 1500, 'weight-loss': 1500,
+             'muscle gain': 2500, 'build muscle': 2500, 'gain muscle': 2500, 'muscle-gain': 2500,
+             'heart-health': 1800, 'energy-boost': 2200}
+    goal = FIXED.get((health_goal or '').lower(), DEFAULT_CALORIE_GOAL)
+    return goal, {'method': 'fixed', 'goal': goal, 'health_goal': health_goal}
+
+def calculate_nutrition_stats(logs, date, health_goal: str = '', age=None, weight_kg=None, height_cm=None, gender=None):
     """Calculate nutrition stats for a specific date"""
     date_logs = [l for l in logs if l['date'] == date]
     
@@ -33,13 +49,14 @@ def calculate_nutrition_stats(logs, date, health_goal: str = ''):
         'carbs': sum(l['carbs'] for l in date_logs),
         'fats': sum(l['fats'] for l in date_logs)
     }
-    calorie_goal = get_calorie_goal(health_goal)
+    calorie_goal, goal_breakdown = get_calorie_goal(health_goal, age, weight_kg, height_cm, gender)
     remaining = max(0, calorie_goal - total['calories'])
     return {
         'stats': total,
         'meal_count': len(date_logs),
         'calorie_goal': calorie_goal,
-        'calories_remaining': remaining
+        'calories_remaining': remaining,
+        'goal_breakdown': goal_breakdown
     }
 
 def calculate_period_analytics(logs, period):
