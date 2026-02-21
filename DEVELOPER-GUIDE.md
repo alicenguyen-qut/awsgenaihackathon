@@ -36,8 +36,8 @@ User → Flask UI → Elastic Beanstalk → Bedrock (Claude 3 Haiku + Titan Embe
 
 ## 3. Tech Stack
 
-- **Frontend:** Flask + HTML/CSS + JavaScript
-- **Backend:** Python 3.9+ (Flask)
+- **Frontend:** JavaScript + HTLM/CSS
+- **Backend:** Python 3.9+ with FlaskAPI
 - **AI Agent:** Strands Agents (`strands-agents`) + Amazon Bedrock Claude 3 Haiku
 - **Embeddings:** Amazon Titan Embeddings V2 (`amazon.titan-embed-text-v2:0`)
 - **Storage:** S3 
@@ -136,7 +136,6 @@ awsgenaihackathon/
 │       └── templates/
 │           └── index.html         # Frontend index
 ├── Procfile                       # Gunicorn entry point for Elastic Beanstalk
-├── .env.example
 ├── Makefile
 ├── requirements.txt
 ├── FEATURES.md
@@ -144,32 +143,22 @@ awsgenaihackathon/
 └── README.md
 ```
 
-## 7. Environment Variables
+## 7. API Endpoints
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `USE_AWS` | Enable AWS mode (Bedrock + S3) | `false` |
-| `AWS_REGION` | AWS region | `ap-southeast-2` |
-| `S3_BUCKET` | S3 bucket for sessions + uploads | — |
-| `RECIPES_BUCKET` | S3 bucket for recipe embeddings | — |
-| `SECRET_KEY` | Flask session secret | `dev-secret-key-...` |
-
-## 8. API Endpoints
-
-### 8.1 Authentication
+### 7.1 Authentication
 - `POST /api/login` — Login or register
 - `POST /api/logout` — Clear session
 - `GET /api/session` — Get current session, username, and chat list
 - `POST /api/change-password` — Change password
 
-### 8.2 Chat
+### 7.2 Chat
 - `POST /api/chat/new` — Create new chat
 - `GET /api/chat/<id>` — Get chat by ID
 - `DELETE /api/chat/<id>` — Delete chat
 - `POST /chat` — Send and receive chat messages
 - `POST /api/clear-chats` — Clear all chat history
 
-### 8.3 Nutrition Tracking
+### 7.3 Nutrition Tracking
 - `POST /api/nutrition/log` — Log a meal 
 - `GET /api/nutrition/logs?date=YYYY-MM-DD` — Get logs for a date
 - `GET /api/nutrition/stats?date=YYYY-MM-DD` — Get daily totals
@@ -178,7 +167,7 @@ awsgenaihackathon/
 - `GET /api/streaks` — Get current/longest streak and trigger daily update
 - `GET /api/recommendations/daily` — AI-powered meal recommendations
 
-### 8.4 Meal Features
+### 7.4 Meal Features
 - `POST /api/favorites` — Toggle favourite
 - `GET /api/favorites` — List all favourites
 - `GET /api/meal-plan` — Get weekly plan
@@ -189,14 +178,14 @@ awsgenaihackathon/
 - `DELETE /api/shopping-list/<index>` — Delete item
 - `POST /api/shopping-list/clear` — Clear all items
 
-### 8.5 User Profile
+### 7.5 User Profile
 - `POST /api/nutrition-profile` — Save dietary preferences, health goal, allergies
 - `GET /api/nutrition-profile` — Get profile
 - `POST /api/profile-photo` — Upload profile photo
 - `GET /api/profile-photo` — Get photo URL
 - `DELETE /api/profile-photo` — Delete photo
 
-### 8.6 File Management
+### 7.6 File Management
 - `POST /upload` — Upload file (.txt, .docx, .pdf); auto-embeds to S3 
 - `GET /api/files` — List uploaded files
 - `GET /api/files/<id>` — Get file content/metadata
