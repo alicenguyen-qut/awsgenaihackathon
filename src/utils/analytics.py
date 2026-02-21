@@ -83,8 +83,18 @@ def calculate_period_analytics(logs, period):
         f"Average daily intake: {int(analytics['avgCalories'])} calories",
         f"Most common meal type: {most_common_meal}"
     ]
+
+    # Per-day summary for frontend drill-down
+    day_logs = sorted([
+        {
+            'date': date,
+            'calories': sum(l['calories'] for l in period_logs if l['date'] == date),
+            'meal_count': sum(1 for l in period_logs if l['date'] == date)
+        }
+        for date in set(l['date'] for l in period_logs)
+    ], key=lambda x: x['date'], reverse=True)
     
-    return {'analytics': analytics, 'insights': insights}
+    return {'analytics': analytics, 'insights': insights, 'day_logs': day_logs}
 
 def update_streak(streaks):
     """Update login streak data"""

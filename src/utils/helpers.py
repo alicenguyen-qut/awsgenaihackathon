@@ -1,9 +1,16 @@
 import json
 import os
 import boto3
+from datetime import datetime
+import zoneinfo
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'txt', 'docx', 'pdf'}
+AEST = zoneinfo.ZoneInfo('Australia/Sydney')
+
+def now_aest():
+    """Current datetime in Australian Eastern time (handles DST automatically)."""
+    return datetime.now(AEST)
 
 def allowed_file(filename):
     """Check if file extension is allowed"""

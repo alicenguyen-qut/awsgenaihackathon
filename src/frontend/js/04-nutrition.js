@@ -45,12 +45,29 @@ async function getAnalytics(period = 'today') {
     return res.json();
 }
 
+async function getLogsForDate(date) {
+    const res = await fetch(`/api/nutrition/logs?date=${date}`);
+    return res.ok ? await res.json() : { logs: [] };
+}
+
+async function getStatsForDate(date) {
+    const res = await fetch(`/api/nutrition/stats?date=${date}`);
+    return res.ok ? await res.json() : { stats: { calories: 0, protein: 0, carbs: 0, fats: 0 } };
+}
+
 async function updateDashboard() {
     const period = document.getElementById('time-period')?.value || 'today';
+    const selectedDate = document.getElementById('selected-date')?.value || getLocalDate();
+
     const [stats, logs, streaks, recs, analytics] = await Promise.all([
-        getTodayStats(), getTodayLogs(), getStreaks(), getDailyRecommendations(), getAnalytics(period)
+        getStatsForDate(selectedDate), getLogsForDate(selectedDate),
+        getStreaks(), getDailyRecommendations(), getAnalytics(period)
     ]);
-    
+
+    // Show/hide date picker based on period
+    const datePicker = document.getElementById('date-picker-row');
+    if (datePicker) datePicker.style.display = period === 'today' ? 'flex' : 'none';
+
     const statsEl = document.getElementById('nutrition-stats');
     if (statsEl) {
         if (period === 'today') {
@@ -67,29 +84,51 @@ async function updateDashboard() {
                 <div class="stat"><span>Avg Calories</span><strong>${Math.round(a.avgCalories)}</strong></div>
                 <div class="stat"><span>Avg Protein</span><strong>${Math.round(a.avgProtein)}g</strong></div>
                 <div class="stat"><span>Total Days</span><strong>${a.totalDays}</strong></div>
-                <div class="stat"><span>Best Day</span><strong>${a.bestDay}cal</strong></div>
+                <div class="stat"><span>Best Day</span><strong>${a.bestDay} cal</strong></div>
             `;
         }
     }
-    
+
     const mealsEl = document.getElementById('today-meals');
     if (mealsEl) {
         if (period === 'today') {
-            mealsEl.innerHTML = logs.logs.length === 0 
-                ? '<p style="text-align: center; color: #718096; font-style: italic; padding: 20px;">No meals logged today. Click "+ Log Meal" to get started!</p>'
-                : logs.logs.map(l => `
-                    <div class="meal-log">
-                        <span><strong>${l.meal_type}:</strong> ${l.name}</span>
-                        <span>${l.calories} cal</span>
-                        <button onclick="deleteMealLog('${l.id}')">×</button>
-                    </div>
-                `).join('');
+            const mealTypeColors = { Breakfast: '#ffd89b', Lunch: '#a8e6cf', Dinner: '#d5c5f0', Snack: '#ffc9ba' };
+            mealsEl.innerHTML = logs.logs.length === 0
+                ? '<p style="text-align:center;color:#718096;font-style:italic;padding:20px;">No meals logged for this day.</p>'
+                : logs.logs.map(l => {
+                    const color = mealTypeColors[l.meal_type] || '#e2e8f0';
+                    return `
+                    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-left:4px solid ${color};">
+                        <span style="background:${color};padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;color:#4a5568;white-space:nowrap;">${l.meal_type}</span>
+                        <span style="flex:1;font-weight:500;color:#2d3748;font-size:14px;">${l.name}</span>
+                        <span style="background:linear-gradient(135deg,#ffeaa7,#ffd89b);padding:4px 10px;border-radius:8px;font-size:13px;font-weight:700;color:#8b6f47;white-space:nowrap;">🔥 ${l.calories} cal</span>
+                        ${l.protein ? `<span style="font-size:12px;color:#718096;">💪 ${l.protein}g</span>` : ''}
+                        <button onclick="deleteMealLog('${l.id}')" style="background:none;border:none;color:#cbd5e0;font-size:18px;cursor:pointer;padding:0 4px;line-height:1;" onmouseover="this.style.color='#e53e3e'" onmouseout="this.style.color='#cbd5e0'">×</button>
+                    </div>`;
+                }).join('');
         } else {
+            // Group logs by date from analytics period
             const insights = analytics.insights || [];
+            const dayLogs = analytics.day_logs || [];
             mealsEl.innerHTML = `
-                <h4>📈 ${period.charAt(0).toUpperCase() + period.slice(1)} Insights</h4>
-                ${insights.map(i => `<div style="padding: 8px; background: #f0f8ff; margin: 4px 0; border-radius: 6px;">${i}</div>`).join('')}
-            `;
+                <div style="margin-bottom:16px;">
+                    ${insights.map(i => `<div style="padding:8px 12px;background:#f0f8ff;margin-bottom:6px;border-radius:8px;font-size:13px;color:#4a5568;">${i}</div>`).join('')}
+                </div>
+                ${dayLogs.length === 0
+                    ? '<p style="text-align:center;color:#718096;font-style:italic;padding:12px;">No meals logged in this period.</p>'
+                    : dayLogs.map(d => `
+                        <div style="padding:12px 16px;background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);cursor:pointer;"
+                             onclick="document.getElementById('time-period').value='today'; document.getElementById('selected-date').value='${d.date}'; updateDashboard();">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-weight:600;color:#2d3748;font-size:14px;">${new Date(d.date + 'T12:00:00').toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'})}</span>
+                                <div style="display:flex;gap:8px;">
+                                    <span style="background:linear-gradient(135deg,#ffeaa7,#ffd89b);padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;color:#8b6f47;">🔥 ${d.calories} cal</span>
+                                    <span style="background:#e2e8f0;padding:3px 10px;border-radius:8px;font-size:12px;color:#4a5568;">${d.meal_count} meals</span>
+                                </div>
+                            </div>
+                        </div>`
+                    ).join('')
+                }`;
         }
     }
     
@@ -171,13 +210,29 @@ window.openDailyTracker = async () => {
     const header = modal.querySelector('.settings-header h2');
     header.innerHTML = `
         📊 Nutrition Analytics
-        <select id="time-period" style="margin-left: 20px; padding: 5px; border-radius: 5px;">
-            <option value="today">Today</option>
+        <select id="time-period" style="margin-left:16px;padding:6px 10px;border-radius:8px;border:2px solid rgba(250,177,160,0.3);font-size:13px;outline:none;">
+            <option value="today">Daily View</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
             <option value="year">This Year</option>
         </select>
     `;
+    // Inject date picker below header
+    let pickerRow = document.getElementById('date-picker-row');
+    if (!pickerRow) {
+        pickerRow = document.createElement('div');
+        pickerRow.id = 'date-picker-row';
+        pickerRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:16px;';
+        pickerRow.innerHTML = `
+            <label style="font-size:13px;font-weight:600;color:#718096;">📅 Date:</label>
+            <input type="date" id="selected-date" value="${getLocalDate()}"
+                style="padding:6px 12px;border:2px solid rgba(250,177,160,0.3);border-radius:8px;font-size:13px;outline:none;color:#2d3748;"
+                onchange="updateDashboard()">
+            <button onclick="document.getElementById('selected-date').value=getLocalDate();updateDashboard();"
+                style="padding:6px 12px;background:rgba(250,177,160,0.15);border:none;border-radius:8px;font-size:12px;font-weight:600;color:#8b6f8f;cursor:pointer;">Today</button>
+        `;
+        modal.querySelector('.settings-box').insertBefore(pickerRow, document.getElementById('nutrition-stats'));
+    }
     document.getElementById('time-period').addEventListener('change', updateDashboard);
     setTimeout(() => updateDashboard(), 50);
 };

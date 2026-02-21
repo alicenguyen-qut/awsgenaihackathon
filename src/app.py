@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 # Import configuration and utilities
 from utils.config import USE_AWS, MOCK_RECIPES, SECRET_KEY, UPLOAD_FOLDER, SESSIONS_FOLDER, MAX_CONTENT_LENGTH
-from utils.helpers import allowed_file, get_user_file
+from utils.helpers import allowed_file, get_user_file, now_aest
 from utils.responses import get_mock_chat_response
 from utils.recommendations import generate_daily_recommendations
 from utils.analytics import calculate_nutrition_stats, calculate_period_analytics, update_streak
