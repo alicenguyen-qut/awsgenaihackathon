@@ -50,7 +50,7 @@ Personalised nutrition guidance has always been expensive and time-consuming. Me
 
 ### Hackathon Demo Architecture
 
-The architecture was deliberately chosen to validate the full product concept end-to-end within the constraints of a hackathon — fast to deploy, zero infrastructure overhead, and cheap enough to run for days without budget concerns. Every service selected has a direct functional justification, not just cost.
+The below architecture was chosen to validate the full product concept end-to-end within the constraints of a hackathon - fast to deploy, zero infrastructure overhead, and cheap enough to run without budget concerns. 
 
 
 ```
@@ -72,27 +72,26 @@ AWS Elastic Beanstalk  (t3.micro EC2)
        ├── sessions/               (User profiles, chat history, meal plans)
        └── uploads/                (User-uploaded documents + embeddings)
 ```
-![Hackathon Architecture](architecture_diagrams/architecture_hackathon.png)
 
-**AWS Services Selected — Cost-Optimised for Hackathon Demo**
+**AWS Services Selected with a focus on demonstrating PoC and being cost-optimised for Hackathon Demo**
 
-| Service | Role | Why chosen |
+| Service | What it is used for | Why chosen |
 |---|---|---|
-| Elastic Beanstalk (t3.micro) | Web app host | One-command deploy, no VPC/ALB config, free tier eligible |
-| Amazon S3 | All data storage | Replaces RDS + vector DB; near-zero cost at demo scale |
-| Amazon Bedrock — Claude 3 Haiku | LLM + agent reasoning | Fastest & cheapest Bedrock model; sufficient for conversational tasks |
-| Amazon Bedrock — Titan Embeddings V2 | Semantic search | Fully managed, no GPU infra; pay-per-call |
-| Strands Agents (open source) | Agentic tool orchestration | No extra AWS service needed; runs in-process on the EC2 |
-| NumPy cosine similarity (in-memory) | RAG retrieval | Eliminates need for OpenSearch or Pinecone; embeddings loaded from S3 |
-| CloudFormation | IaC / CI-CD | Entire stack (Beanstalk app, S3, IAM) in one template |
+| Elastic Beanstalk (t3.micro) | Web app hosting | Rapidly deploys and manages application without much infrastructure provisioning  |
+| Amazon S3 | Data storage | Data storage in cloud at near-zero cost at demo scale |
+| Amazon Bedrock - Claude 3 Haiku | LLM + agent reasoning | Fast and cost-saving Bedrock model, sufficient to demonstrate the LLM capability |
+| Amazon Bedrock - Titan Embeddings V2 | Semantic search | Fully managed, no GPU infra, optimises for cost and retrieval performance without sacrificing accuracy |
+| Strands Agents (open source) | Agentic tool orchestration | Easy to use, fast to buid, especially with tools calling and orchestration |
+| NumPy cosine similarity | RAG retrieval | Embedding search - quick, easy and no-cost to implement |
+| CloudFormation | IaC / CI-CD | Deploys entire stack (Beanstalk app, S3, IAM) in one template - reusable and faster deployment compared to ClicksOp |
 
-**Infrastructure:** All resources deployed via CloudFormation (Elastic Beanstalk app, S3 bucket, IAM role with Bedrock + S3 permissions).
+![Hackathon Architecture](architecture_diagrams/architecture_hackathon.png)
 
 ---
 
-### Future Production Architecture
+### Future Enhancement Architecture
 
-The hackathon stack proves the concept. Scaling to real users requires replacing the cost-optimised shortcuts with managed services built for concurrency, durability, and observability.
+The hackathon stack proves the concept. Scaling to real users requires future enhancements built for concurrency, durability, and observability.
 
 ![Future Architecture](architecture_diagrams/architecture_future.png)
 
@@ -106,40 +105,38 @@ Amazon CloudFront  (CDN + WAF)
 Application Load Balancer
  │
  ▼
-AWS Fargate (ECS)           ◄── Auto Scaling
+AWS Fargate (ECS) ◄── Auto Scaling
  │
  ├──► Amazon Bedrock
- │     ├── Claude 3 Sonnet / Opus   (upgraded model tier)
+ │     ├── Claude Sonnet 4.6/ Opus   (upgraded model tier, better reasoning models)
  │     └── Titan Embeddings V2
  │
- ├──► Amazon OpenSearch Serverless  (vector store — replaces NumPy)
+ ├──► Amazon OpenSearch Serverless  (vector store for embeddings)
  │
- ├──► Amazon DynamoDB               (user profiles, sessions, meal plans)
+ ├──► Amazon DynamoDB               (stores user profiles, sessions, meal plans)
  │
- ├──► Amazon S3                     (uploads, recipe assets)
+ ├──► Amazon S3                     (stores uploads artifacts, recipe assets)
  │
- ├──► Amazon Cognito                (auth — replaces session UUID)
+ ├──► Amazon Cognito                (user authentication)
  │
  └──► Amazon CloudWatch + X-Ray     (observability)
 ```
 
-**Key upgrades and rationale**
+**Future upgrades and rationale**
 
-- **Fargate (ECS)** replaces Beanstalk t3.micro — horizontal auto-scaling with no server management; handles concurrent users without cold-start latency
-- **OpenSearch Serverless** replaces NumPy in-memory search — persistent, scalable vector index; no full embedding reload on each request
-- **DynamoDB** replaces S3 JSON files for sessions — single-digit millisecond reads, TTL for session expiry, no file I/O
-- **CloudFront + WAF** — edge caching for static assets, DDoS protection, geo-restriction
-- **Cognito** — managed auth with MFA, social login, and JWT; replaces anonymous UUID sessions
-- **CloudWatch + X-Ray** — distributed tracing across Bedrock calls, tool invocations, and S3 ops; essential for debugging agentic workflows at scale
-- **Claude 3 Sonnet/Opus** — higher reasoning quality for complex multi-day meal planning and document analysis as user base grows
-
-> See [DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md) for full setup, deployment, and API documentation.
+- **Fargate (ECS)** replaces Beanstalk t3.micro - horizontal auto-scaling with no server management; handles concurrent users without cold-start latency
+- **OpenSearch Serverless** replaces NumPy in-memory search - persistent, scalable vector index
+- **DynamoDB** replaces S3 storage for user session data - single-digit millisecond reads, TTL for session expiry, no file I/O
+- **CloudFront + WAF** - edge caching for static assets, DDoS protection, geo-restriction
+- **Cognito** - managed auth with MFA, social login, and JWT
+- **CloudWatch + X-Ray** - distributed tracing across Bedrock calls, tool invocations, and S3 ops; essential for debugging agentic workflows at scale
+- **Claude Sonnet/Opus LLM models** - higher reasoning quality for complex multi-day meal planning and document analysis as user base grows
 
 ---
 
 ## 3. Video Demo
 
-[![MealBuddy Demo](https://img.shields.io/badge/▶_Watch_Demo-3_mins-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=PLACEHOLDER)
+[![MealBuddy Demo](https://img.shields.io/badge/▶_Watch_Demo-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=PLACEHOLDER)
 
 
 ---
@@ -150,4 +147,8 @@ AWS Fargate (ECS)           ◄── Auto Scaling
 
 ---
 
-📋 [Features](FEATURES.md) · 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
+## 5. Other Documentatuion
+
+📋 [Webapp Features](FEATURES.md) 
+
+🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
