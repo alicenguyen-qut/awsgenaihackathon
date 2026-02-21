@@ -1,200 +1,145 @@
-# Personal Cooking Assistant
+# 🍳 MealBuddy — Your Daily Buddy for Smarter Eating Habits
 
-Personalized AI cooking assistant using RAG (Retrieval-Augmented Generation) with AWS Bedrock services (Claude Haiku for chat, Titan Embeddings V2 for semantic search), hosted on AWS Elastic Beanstalk with S3 storage.
+> Team Number: <Number>
 
-## 1. Architecture
-```
-User → Flask UI → Elastic Beanstalk → Bedrock (Claude + Titan Embeddings V2 )
-                      ↓
-                  S3 Bucket
-                  ├── embeddings/    (Recipe embeddings)
-                  ├── recipes/       (Recipe raw data)
-                  ├── sessions/      (User chat session data & configs)
-                  └── uploads/       (User-uploaded files)
-```
+> Team Members: <Number>
 
-**Cost-Optimized:** Uses Elastic Beanstalk t3.micro + S3 + in-memory vector search
+> Built and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Agent & Kiro
 
-## 2. Key Features
+---
 
-### 2.1 🔥 Daily-Use Features
-- **📊 Daily Nutrition Tracking** - Log meals with calories/macros, see real-time totals
-- **🔥 Habit Streaks & Achievement Unlock** - Gamified daily login streaks with achievements and milestones. Unlock badges at 7, 30, 100, and 365-day milestones
-- **💡 Smart Recommendations** - AI suggests meals based on today's nutrition gaps
+## 1. Use Case
 
-### 2.2 🤖 Autonomous Agent System
-- **Intent detection** - Understands "plan my week", "generate shopping list"
-- **Multi-step execution** - Chains actions automatically 
-- **Proactive suggestions** - Time-based meal recommendations
-- **Tool use capabilities** - Autonomously searches recipes, adds favorites, plans meals, generates shopping lists, and logs nutrition
-- **Transparent actions** - All agent actions are displayed with visual feedback
+### The Problem
 
-### 2.3 🍳 Core Features
-- AI-powered chat with RAG
-- Recipe favorites & meal planning
-- Shopping list management
-- User profiles with dietary preferences
-- Document upload support
+Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **67% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2022)*.
 
-**See [FEATURES.md](FEATURES.md) for complete feature documentation.**
+The intent to eat better is not the problem. Research shows **over 80% of people who begin a healthy eating plan abandon it within two weeks** — not from lack of motivation, but from the cognitive and logistical burden of sustaining it *(Hartmann et al., IJBNPA, 2013)*. Meal planning takes 2–3 hours per week. A dietitian costs $100–$400 per session. Calorie tracking apps require manual entry for every meal. The tools are fragmented, generic, and exhausting.
 
-## 3. Tech Stack
+### Who Is This For
 
-- **Frontend:** Flask + HTML/CSS + JavaScript
-- **Backend:** Python (Flask)
-- **Infrastructure:** Webapp hosted on Elastic Beanstalk All services deployed via CloudFormation
-- **LLM:** Amazon Bedrock Haiku 
-- **Embeddings:** Amazon Titan Embeddings
-- **S3 Storage:** S3 (User data, session data, embedding data running NumPy cosine similarity)
+- **Busy professionals** who want to eat well but have no time to plan
+- **Health-conscious individuals** managing dietary restrictions, allergies, or chronic conditions
+- **Fitness enthusiasts** tracking macros without the friction of manual logging
+- **Budget-conscious households** reducing food waste through smarter weekly planning
 
-## 4. CloudFormation Deployment
-- Elastic Beanstalk using t3.micro EC2 instance with Flask app
-- S3 bucket for all data storage
-- IAM Role (S3 + Bedrock permissions)
+### Value Proposition
 
-## 5. Quick Start
+MealBuddy replaces four separate tools — recipe search, meal planner, shopping list, and nutrition tracker — with a **single conversation**. Set your dietary preferences once. From that point, every interaction is personalised:
 
-### 5.1 Prerequisites
-- Python 3.9+
-- uv and pip (Python package manager)
-- AWS CLI (for deployment)
-- Make CLI
+- Ask for a high-protein dinner → get a complete recipe with ingredients and steps
+- Say "plan my week" → seven days populate automatically via autonomous agent
+- Upload a PDF from your nutritionist → MealBuddy reads and applies it
+- Ask what's left in your calorie budget → get a real-time answer
 
-### 5.2 Installation
+**What previously took 2–3 hours of weekly planning takes under 3 minutes.**
 
-```bash
-make install
-```
+### Why This Is Disruptive
 
-### 5.3 Running Locally
+Every existing nutrition app is reactive — you open it, input data, it shows you a number. MealBuddy is the first to combine **conversational AI**, **semantic search over personal documents (RAG)**, and **autonomous multi-step action** in a single lightweight product.
 
-**Option 1: Without AWS (Mock Mode to test UI + Features)**
-```bash
-# No AWS credentials needed - uses mock data responses
-make run-local
-```
+This is the difference between a calculator and an accountant. Between a recipe website and a personal chef who already knows your allergies, your goals, and what's in your fridge.
 
-**Option 2: With AWS Bedrock + S3 (To test UI + LLM model + Embeddings stored in S3)**
-```bash
-# Requires: AWS CLI configured with Bedrock access + S3 deployed with embeddings (Please see Deploy to AWS)
-make run-aws
-```
-Access the local chatbot at: http://localhost:5000
+At a time when a nutritionist costs $400/month, MealBuddy delivers the same personalised guidance at the cost of a cloud compute bill. That is what changes behaviour — not better features, but lower friction.
 
-### 5.4 Deploy to AWS
+*Sources: WHO Global Health Estimates 2019; GBD Diet Collaborators, The Lancet 2019; AIHW Australian Burden of Disease Study 2022; Hartmann et al., IJBNPA 2013.*
 
-```bash
-# Deploy to AWS via CloudFormation
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh
-```
+---
 
-**What gets deployed:**
-- Elastic Beanstalk application (t3.micro EC2 instance)
-- S3 bucket for recipes, embeddings, sessions, and uploads
-- IAM role with S3 and Bedrock permissions
-- Recipe embeddings indexed with Titan V2
+## 2. Architecture
 
-### 5.5 Clean up AWS resources
-```bash
-# Cleanup - deleting all resrouces
-chmod +x scripts/cleanup.sh
-./scripts/cleanup.sh
-```
+### Hackathon Demo Architecture
 
-## 6. Project Structure
+The architecture was deliberately chosen to validate the full product concept end-to-end within the constraints of a hackathon — fast to deploy, zero infrastructure overhead, and cheap enough to run for days without budget concerns. Every service selected has a direct functional justification, not just cost.
 
 ```
-awsgenaihackathon/
-├── data/                          # Recipe documents (RAG optimized)
-│   ├── nutrition_guidelines.txt
-│   └── recipe_*.txt
-├── infrastructure/                # CloudFormation templates
-│   └── cloudformation.yaml       # Elastic Beanstalk deployment
-├── scripts/                       # Deployment scripts
-│   ├── deploy.sh                 # Single deployment script
-│   ├── cleanup.sh                # Delete all AWS resources
-│   └── index_recipes.py          # Recipe indexing (Titan V2)
-├── src/
-│   ├── app.py                     # Main Flask application
-│   ├── models/                    # AI/ML models
-│   │   ├── __init__.py
-│   │   └── bedrock_rag.py        # Bedrock RAG (Titan V2 + Claude)
-│   ├── utils/                     # Helper functions & config
-│   │   ├── __init__.py
-│   │   ├── config.py             # Configuration & constants
-│   │   └── helpers.py            # User data, file handling
-│   └── frontend/                 # Frontend assets
-│       ├── js/                   # Modular JavaScript
-│       │   ├── 01-core.js       # Core utilities & initialization
-│       │   ├── 02-auth.js       # Authentication & user management
-│       │   ├── 03-chat.js       # Chat operations & messages
-│       │   ├── 04-nutrition.js  # Nutrition tracking & analytics
-│       │   ├── 05-meals.js      # Favorites, planner, shopping
-│       │   ├── 06-files.js      # File upload/management
-│       │   └── 07-agent.js      # AI autonomous agent
-│       └── templates/
-│           └── index.html       # Main UI template
-├── sessions/                      # Local user session data (gitignored)
-├── uploads/                       # Local uploaded files (gitignored)
-├── Procfile                       # Elastic Beanstalk process config
-├── .env                           # Environment variables (gitignored)
-├── .env.example                   # Environment variables template
-├── .gitignore
-├── DEPLOYMENT.md                  # AWS deployment guide
-├── FEATURES.md                    # Feature documentation
-├── Makefile                       # Build commands
-├── README.md                      # Main documentation
-└── requirements.txt               # Python dependencies
+User
+ │
+ ▼
+Flask UI (HTML/CSS/JS)
+ │
+ ▼
+AWS Elastic Beanstalk  (t3.micro EC2)
+ │
+ ├──► Amazon Bedrock
+ │     ├── Claude 3 Haiku          (Conversational AI + Strands Agent)
+ │     └── Titan Embeddings V2     (Semantic recipe & document search)
+ │
+ └──► Amazon S3
+       ├── embeddings/             (Pre-indexed recipe embeddings)
+       ├── recipes/                (Recipe raw data)
+       ├── sessions/               (User profiles, chat history, meal plans)
+       └── uploads/                (User-uploaded documents + embeddings)
 ```
 
-## 7. API Endpoints
+**AWS Services Selected — Cost-Optimised for Hackathon Demo**
 
-### 7.1 Authentication
-- `POST /api/login` - Login or register user
-- `POST /api/logout` - Logout user
-- `GET /api/session` - Get current session
+| Service | Role | Why chosen |
+|---|---|---|
+| Elastic Beanstalk (t3.micro) | Web app host | One-command deploy, no VPC/ALB config, free tier eligible |
+| Amazon S3 | All data storage | Replaces RDS + vector DB; near-zero cost at demo scale |
+| Amazon Bedrock — Claude 3 Haiku | LLM + agent reasoning | Fastest & cheapest Bedrock model; sufficient for conversational tasks |
+| Amazon Bedrock — Titan Embeddings V2 | Semantic search | Fully managed, no GPU infra; pay-per-call |
+| Strands Agents (open source) | Agentic tool orchestration | No extra AWS service needed; runs in-process on the EC2 |
+| NumPy cosine similarity (in-memory) | RAG retrieval | Eliminates need for OpenSearch or Pinecone; embeddings loaded from S3 |
+| CloudFormation | IaC / CI-CD | Entire stack (Beanstalk app, S3, IAM) in one template |
 
-### 7.2 Chat
-- `POST /api/chat/new` - Create new chat
-- `GET /api/chat/<id>` - Get chat by ID
-- `DELETE /api/chat/<id>` - Delete chat
-- `POST /chat` - Send message and get AI response (includes tool calls)
+**Infrastructure:** All resources deployed via CloudFormation (Elastic Beanstalk app, S3 bucket, IAM role with Bedrock + S3 permissions).
 
-### 7.3 Nutrition Tracking
-- `POST /api/nutrition/log` - Log a meal with calories and macros
-- `GET /api/nutrition/logs` - Get meal logs 
-- `GET /api/nutrition/stats` - Get nutrition statistics 
-- `DELETE /api/nutrition/logs/<id>` - Delete meal log
-- `GET /api/streaks` - Get login streaks and achievements
-- `GET /api/nutrition/analytics` - Get analytics 
-- `GET /api/recommendations/daily` - Get AI-powered daily meal recommendations
+---
 
-### 7.4 Meal Features
-- `POST /api/favorites` - Add/remove favorite recipe 
-- `GET /api/favorites` - Get all favorite recipes
-- `GET /api/meal-plan` - Get weekly meal plan
-- `POST /api/meal-plan` - Save meal plan 
-- `GET /api/shopping-list` - Get shopping list items
-- `POST /api/shopping-list` - Add item to shopping list 
-- `POST /api/shopping-list/<index>/toggle` - Toggle item checked status
-- `DELETE /api/shopping-list/<index>` - Delete shopping list item
-- `POST /api/shopping-list/clear` - Clear all shopping list items
+### Future Production Architecture
 
-### 7.5 User Profile
-- `POST /api/nutrition-profile` - Save nutrition profile (dietary preferences, health goals, allergies)
-- `GET /api/nutrition-profile` - Get nutrition profile
-- `POST /api/profile-photo` - Upload profile photo 
-- `GET /api/profile-photo` - Get profile photo URL
-- `DELETE /api/profile-photo` - Delete profile photo
-- `POST /api/change-password` - Change password 
+The hackathon stack proves the concept. Scaling to real users requires replacing the cost-optimised shortcuts with managed services built for concurrency, durability, and observability.
 
-### 7.6 File Management
-- `POST /upload` - Upload file (multipart/form-data, supports .txt, .docx, .pdf)
-- `GET /api/files` - List all uploaded files
-- `GET /api/files/<id>` - Get file content and metadata
-- `DELETE /api/files/<id>` - Delete uploaded file
+```
+Users
+ │
+ ▼
+Amazon CloudFront  (CDN + WAF)
+ │
+ ▼
+Application Load Balancer
+ │
+ ▼
+AWS Fargate (ECS)           ◄── Auto Scaling
+ │
+ ├──► Amazon Bedrock
+ │     ├── Claude 3 Sonnet / Opus   (upgraded model tier)
+ │     └── Titan Embeddings V2
+ │
+ ├──► Amazon OpenSearch Serverless  (vector store — replaces NumPy)
+ │
+ ├──► Amazon DynamoDB               (user profiles, sessions, meal plans)
+ │
+ ├──► Amazon S3                     (uploads, recipe assets)
+ │
+ ├──► Amazon Cognito                (auth — replaces session UUID)
+ │
+ └──► Amazon CloudWatch + X-Ray     (observability)
+```
 
-### 7.7 Settings
-- `POST /api/clear-chats` - Clear all chat history
-- `POST /api/clear-files` - Clear all uploaded files
+**Key upgrades and rationale**
+
+- **Fargate (ECS)** replaces Beanstalk t3.micro — horizontal auto-scaling with no server management; handles concurrent users without cold-start latency
+- **OpenSearch Serverless** replaces NumPy in-memory search — persistent, scalable vector index; no full embedding reload on each request
+- **DynamoDB** replaces S3 JSON files for sessions — single-digit millisecond reads, TTL for session expiry, no file I/O
+- **CloudFront + WAF** — edge caching for static assets, DDoS protection, geo-restriction
+- **Cognito** — managed auth with MFA, social login, and JWT; replaces anonymous UUID sessions
+- **CloudWatch + X-Ray** — distributed tracing across Bedrock calls, tool invocations, and S3 ops; essential for debugging agentic workflows at scale
+- **Claude 3 Sonnet/Opus** — higher reasoning quality for complex multi-day meal planning and document analysis as user base grows
+
+> See [DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md) for full setup, deployment, and API documentation.
+
+---
+
+## 3. Video Demo
+
+[![MealBuddy Demo](https://img.shields.io/badge/▶_Watch_Demo-3_mins-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=PLACEHOLDER)
+
+
+---
+
+## 4. Live Link
+
+🌐 **[mealbuddy.ap-southeast-2.elasticbeanstalk.com](http://mealbuddy.ap-southeast-2.elasticbeanstalk.com)**
