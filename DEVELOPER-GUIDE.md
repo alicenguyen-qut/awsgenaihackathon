@@ -102,26 +102,28 @@ chmod +x scripts/cleanup.sh
 
 ```
 awsgenaihackathon/
-├── data/                          # Recipe documents (RAG source)
+├── architecture_diagrams/         # AWS architecture diagrams 
+├── data/                          # Recipe documents (RAG source - gitignored)
 │   ├── nutrition_guidelines.txt
-│   └── recipe_*.txt               # 14 recipes
+│   └── recipe_*.txt             
 ├── infrastructure/
-│   └── cloudformation.yaml        # Elastic Beanstalk + S3 + IAM
+│   └── cloudformation.yaml        # CI/CD deployment
 ├── scripts/
-│   ├── deploy.sh
-│   ├── cleanup.sh
+│   ├── deploy.sh                  # Deploys AWS resources
+│   ├── cleanup.sh                 # Destroys AWS resources
+│   ├── generate_diagram.py        # Draws AWS architecture diagrams
 │   └── index_recipes.py           # Indexes recipes → S3 embeddings
 ├── src/
 │   ├── app.py                     # Flask app + all API routes
 │   ├── models/
 │   │   └── bedrock_rag.py         # BedrockRAG: embeddings, search, Strands agent
 │   ├── utils/
-│   │   ├── config.py              # Env vars, USE_AWS flag, mock data
-│   │   ├── storage.py             # S3/local storage abstraction
-│   │   ├── helpers.py             # User data load/save, file utils
+│   │   ├── config.py              # Configs
+│   │   ├── storage.py             # Data storage abstraction
+│   │   ├── helpers.py             # Helper utils
 │   │   ├── analytics.py           # Nutrition stats, period analytics, streak logic
 │   │   ├── recommendations.py     # Daily meal recommendations
-│   │   └── responses.py           # Mock chat responses (local mode)
+│   │   └── responses.py           # Mock chat responses (for local testing mode)
 │   └── frontend/
 │       ├── js/
 │       │   ├── 01-core.js         # Core utilities & initialisation
@@ -132,14 +134,13 @@ awsgenaihackathon/
 │       │   ├── 06-files.js        # File upload/management
 │       │   └── 07-agent.js        # Frontend intent detection & agent actions
 │       └── templates/
-│           └── index.html
-├── sessions/                      # Local session JSON files (gitignored)
-├── uploads/                       # Local uploaded files (gitignored)
+│           └── index.html         # Frontend index
 ├── Procfile                       # Gunicorn entry point for Elastic Beanstalk
 ├── .env.example
 ├── Makefile
 ├── requirements.txt
 ├── FEATURES.md
+├── DEVELOPER-GUIDE.md
 └── README.md
 ```
 
