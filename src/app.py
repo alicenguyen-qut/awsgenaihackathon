@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, send_from_directory
+from flask import Flask, render_template, request, jsonify, session, send_from_directory, Response, stream_with_context
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from docx import Document
@@ -783,6 +783,147 @@ def get_daily_recommendations():
         return jsonify({'recommendations': recommendations})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/chat/stream', methods=['POST'])
+def chat_stream():
+    user_id = get_user_session()
+    user_data = storage.load_user_data(user_id)
+
+    data = request.json
+    query = data.get('query', '')
+
+    if not user_data['current_chat']:
+        chat_id = str(uuid.uuid4())
+        new_chat_obj = {
+            'id': chat_id,
+            'title': query[:50] if len(query) > 50 else query,
+            'created_at': datetime.now().isoformat(),
+            'messages': []
+        }
+        user_data['chats'].append(new_chat_obj)
+        user_data['current_chat'] = chat_id
+
+    current_chat = next((c for c in user_data['chats'] if c['id'] == user_data['current_chat']), None)
+
+    def generate():
+        import json as _json
+
+        def sse(event, data):
+            return f"event: {event}\ndata: {_json.dumps(data)}\n\n"
+
+        tool_calls = []
+
+        if not (USE_AWS and bedrock_rag):
+            response = get_mock_chat_response(query)
+            for word in response.split(' '):
+                yield sse('token', {'text': word + ' '})
+            yield sse('done', {'tool_calls': []})
+            return
+
+        try:
+            user_profile = user_data.get('nutrition_profile', {})
+            recipes = S3_RECIPES if S3_RECIPES else MOCK_RECIPES
+
+            q_lower = query.lower()
+            is_planning = any(w in q_lower for w in ['plan', 'week', 'meal plan', 'shopping'])
+            is_nutrition = any(w in q_lower for w in ['calorie', 'macro', 'remaining', 'log', 'track', 'snack', 'how much', 'how many'])
+
+            if is_planning:
+                yield sse('status', {'message': '🔍 Searching recipes for your preferences...'})
+            elif is_nutrition:
+                yield sse('status', {'message': '📊 Calculating your nutrition stats...'})
+            else:
+                yield sse('status', {'message': '🤔 Thinking...'})
+
+            def tool_handler(tool_name, tool_input):
+                try:
+                    if tool_name == 'search_recipes':
+                        results = bedrock_rag.search_recipes(tool_input.get('query', ''), recipes, tool_input.get('top_k', 3))
+                        return {'success': True, 'recipes': [r.get('name', '') for r in results]}
+                    elif tool_name == 'add_to_favorites':
+                        recipe_name = tool_input.get('recipe_name', '')
+                        if 'favorites' not in user_data:
+                            user_data['favorites'] = []
+                        user_data['favorites'].append({'recipeId': str(uuid.uuid4()), 'recipeName': recipe_name, 'content': tool_input.get('recipe_content', '')})
+                        storage.save_user_data(user_id, user_data)
+                        return {'success': True, 'message': f"Added '{recipe_name}' to favorites"}
+                    elif tool_name == 'add_to_meal_plan':
+                        day, meal_name = tool_input.get('day', ''), tool_input.get('meal_name', '')
+                        if 'meal_plan' not in user_data:
+                            user_data['meal_plan'] = {}
+                        user_data['meal_plan'][day] = meal_name
+                        storage.save_user_data(user_id, user_data)
+                        return {'success': True, 'message': f"Added '{meal_name}' to {day}"}
+                    elif tool_name == 'add_to_shopping_list':
+                        items = tool_input.get('items', [])
+                        if 'shopping_list' not in user_data:
+                            user_data['shopping_list'] = []
+                        for item in items:
+                            user_data['shopping_list'].append({'name': item, 'checked': False})
+                        storage.save_user_data(user_id, user_data)
+                        return {'success': True, 'message': f"Added {len(items)} items to shopping list"}
+                    elif tool_name == 'log_nutrition':
+                        if 'nutrition_logs' not in user_data:
+                            user_data['nutrition_logs'] = []
+                        log = {
+                            'id': str(uuid.uuid4()),
+                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            'meal_type': tool_input.get('meal_type', 'snack'),
+                            'name': tool_input.get('name', ''),
+                            'calories': tool_input.get('calories', 0),
+                            'protein': tool_input.get('protein', 0),
+                            'carbs': tool_input.get('carbs', 0),
+                            'fats': tool_input.get('fats', 0),
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        user_data['nutrition_logs'].append(log)
+                        storage.save_user_data(user_id, user_data)
+                        return {'success': True, 'message': f"Logged {log['name']} ({log['calories']} cal)"}
+                    elif tool_name == 'get_nutrition_stats':
+                        today = datetime.now().strftime('%Y-%m-%d')
+                        stats = calculate_nutrition_stats(user_data.get('nutrition_logs', []), today, user_data.get('nutrition_profile', {}).get('healthGoal', ''))
+                        return {'success': True, 'stats': stats, 'meal_plan': user_data.get('meal_plan', {})}
+                    return {'success': False, 'error': f'Unknown tool: {tool_name}'}
+                except Exception as e:
+                    return {'success': False, 'error': str(e)}
+
+            if is_planning:
+                yield sse('status', {'message': '📅 Building your weekly meal plan...'})
+
+            result = bedrock_rag.chat_with_rag(
+                query, recipes, user_profile, tool_handler,
+                current_chat.get('messages', []) if current_chat else [],
+                user_id=user_id, uploads_bucket=S3_BUCKET,
+                meal_plan=user_data.get('meal_plan', {})
+            )
+            response_text = result.get('response', '')
+            tool_calls = result.get('tool_calls', [])
+
+            if is_planning and tool_calls:
+                yield sse('status', {'message': '✅ Meal plan ready! Streaming your summary...'})
+
+            # Stream response word by word
+            words = response_text.split(' ')
+            for word in words:
+                yield sse('token', {'text': word + ' '})
+
+            if current_chat:
+                current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': datetime.now().isoformat()})
+                current_chat['messages'].append({'role': 'assistant', 'content': response_text, 'timestamp': datetime.now().isoformat(), 'tool_calls': tool_calls})
+                if len(current_chat['messages']) == 2:
+                    current_chat['title'] = query[:50]
+                storage.save_user_data(user_id, user_data)
+
+            yield sse('done', {'tool_calls': tool_calls})
+
+        except Exception as e:
+            print(f"Stream error: {e}")
+            import traceback; traceback.print_exc()
+            yield sse('error', {'message': str(e)})
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+
 
 if __name__ == '__main__':
     mode = "AWS MODE" if USE_AWS else "LOCAL MODE"

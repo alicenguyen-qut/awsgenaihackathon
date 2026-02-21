@@ -114,10 +114,12 @@ class BedrockRAG:
             f"Tags: {', '.join(r.get('tags',[]))}\nCalories: {r.get('calories','Unknown')}"
             for r in relevant
         ])
+        upload_doc_context = ""
         if user_id and uploads_bucket:
-            chunks = self.search_user_uploads(query, user_id, uploads_bucket)
+            chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
             if chunks:
-                context += "\n\nUser Uploaded Documents:\n" + "\n---\n".join(chunks)
+                upload_doc_context = "\n\nUser Uploaded Documents:\n" + "\n---\n".join(chunks)
+                context += upload_doc_context
         if meal_plan:
             meal_plan_text = "\n".join(f"- {day}: {meal}" for day, meal in meal_plan.items() if meal)
             if meal_plan_text:
@@ -162,8 +164,10 @@ class BedrockRAG:
             document = make_document_agent(context, user_profile or {})
 
             q = query.lower()
-            if any(w in q for w in ["restriction", "allergy", "document", "pdf", "nutritionist", "my file", "uploaded"]):
-                active_agent, agent_input = document, query
+            doc_keywords = ["restriction", "allergy", "document", "pdf", "nutritionist", "my file", "uploaded", "dietitian", "intolerance", "avoid", "can i eat", "should i eat"]
+            if upload_doc_context or any(w in q for w in doc_keywords):
+                doc_input = (upload_doc_context + "\n\n" if upload_doc_context else "") + query
+                active_agent, agent_input = document, doc_input
             elif any(w in q for w in ["calorie", "macro", "remaining", "log", "track", "snack", "how much", "how many"]):
                 active_agent, agent_input = nutrition, full_query
             else:

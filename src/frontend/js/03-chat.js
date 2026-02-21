@@ -78,37 +78,90 @@ async function sendMessage() {
     const loading = document.getElementById('loading');
     sendBtn.disabled = true;
     loading.classList.add('active');
-    
+
+    // Create bot message bubble for streaming
+    const container = document.getElementById('chatContainer');
+    const botDiv = document.createElement('div');
+    botDiv.className = 'message bot';
+    botDiv.innerHTML = `
+        <div class="message-inner">
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                <span class="stream-status" style="color:#8b6f8f; font-style:italic;">⏳ Thinking...</span>
+            </div>
+        </div>`;
+    container.appendChild(botDiv);
+    container.scrollTop = container.scrollHeight;
+    const contentEl = botDiv.querySelector('.message-content');
+
+    let fullResponse = '';
+    let toolCalls = [];
+
     try {
-        const response = await fetch('/chat', {
+        const response = await fetch('/chat/stream', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({query})
         });
-        const data = await response.json();
-        addMessage(data.response, false);
-        
-        // Display agent tool calls if any (only for mutating actions, not searches)
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop(); // keep incomplete chunk
+
+            for (const part of parts) {
+                const eventMatch = part.match(/^event: (\w+)/);
+                const dataMatch = part.match(/^data: (.+)/m);
+                if (!eventMatch || !dataMatch) continue;
+
+                const event = eventMatch[1];
+                const data = JSON.parse(dataMatch[1]);
+
+                if (event === 'status') {
+                    contentEl.innerHTML = `<span class="stream-status" style="color:#8b6f8f; font-style:italic;">${data.message}</span>`;
+                    container.scrollTop = container.scrollHeight;
+                } else if (event === 'token') {
+                    if (fullResponse === '') contentEl.innerHTML = ''; // clear status
+                    fullResponse += data.text;
+                    contentEl.innerHTML = fullResponse.replace(/\n/g, '<br>');
+                    container.scrollTop = container.scrollHeight;
+                } else if (event === 'done') {
+                    toolCalls = data.tool_calls || [];
+                } else if (event === 'error') {
+                    contentEl.innerHTML = `<span style="color:red;">Error: ${data.message}</span>`;
+                }
+            }
+        }
+
+        // Handle tool calls
         const mutatingTools = ['add_to_favorites', 'add_to_meal_plan', 'add_to_shopping_list', 'log_nutrition'];
-        const actionableCalls = data.tool_calls ? data.tool_calls.filter(c => mutatingTools.includes(c.tool)) : [];
+        const actionableCalls = toolCalls.filter(c => mutatingTools.includes(c.tool));
         if (actionableCalls.length > 0) {
             displayToolCalls(actionableCalls);
             await loadAgentContext();
-            // Refresh open modals
             if (!document.getElementById('mealPlannerModal').classList.contains('hidden')) loadMealPlan();
             if (!document.getElementById('shoppingListModal').classList.contains('hidden')) loadShoppingList();
+            if (actionableCalls.some(c => c.tool === 'log_nutrition')) {
+                if (!document.getElementById('dailyTrackerModal').classList.contains('hidden')) await updateDashboard();
+            }
         }
-        
-        // Legacy agent actions (for local mode only — skip if backend already fired tool_calls)
+
         if (actionableCalls.length === 0) {
-            const actions = await executeAgentActions(query, data.response);
+            const actions = await executeAgentActions(query, fullResponse);
             if (actions && actions.length > 0) {
                 displayAgentActions(actions);
                 await loadAgentContext();
             }
         }
     } catch (error) {
-        addMessage('Error connecting', false);
+        contentEl.innerHTML = 'Error connecting';
     } finally {
         sendBtn.disabled = false;
         loading.classList.remove('active');

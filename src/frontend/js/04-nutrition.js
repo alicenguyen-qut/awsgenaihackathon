@@ -264,10 +264,10 @@ Close</button>
     document.body.appendChild(modal);
 }
 
-window.showRecommendationDetails = async (index) => {
+window.showRecommendationDetails = (index) => {
     const rec = window.currentRecommendations[index];
     if (!rec || rec.type !== 'meal') return;
-    
+
     const modal = document.createElement('div');
     modal.id = 'rec-modal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2000;';
@@ -277,8 +277,14 @@ window.showRecommendationDetails = async (index) => {
                 <div style="font-size: 48px; margin-bottom: 12px;">🍽️</div>
                 <h2 style="font-size: 24px; font-weight: 700; color: #2d3748;">${rec.title}</h2>
                 <p style="color: #718096; margin-top: 8px;">${rec.reason}</p>
+                <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+                    <span style="background:#e2e8f0; padding:4px 12px; border-radius:8px; font-size:13px; color:#4a5568;">🔥 ${rec.calories} cal</span>
+                    <span style="background:#e2e8f0; padding:4px 12px; border-radius:8px; font-size:13px; color:#4a5568;">💪 ${rec.protein}g protein</span>
+                </div>
             </div>
-            <div id="recipe-content" style="text-align: center; padding: 20px; color: #718096;">Loading recipe...</div>
+            <div id="recipe-content" style="text-align: center; padding: 20px; color: #718096;">
+                <button onclick="loadRecipeDetails(${index})" style="padding: 12px 24px; background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;">📖 View Recipe</button>
+            </div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button onclick="document.getElementById('rec-modal').remove()" style="flex: 1; padding: 12px; background: #e2e8f0; color: #2d3748; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">Close</button>
                 <button onclick="quickLogRecommendation(${index})" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">✓ Log This Meal</button>
@@ -286,17 +292,40 @@ window.showRecommendationDetails = async (index) => {
         </div>
     `;
     document.body.appendChild(modal);
-    
+};
+
+window.loadRecipeDetails = async (index) => {
+    const rec = window.currentRecommendations[index];
+    const contentEl = document.getElementById('recipe-content');
+    contentEl.innerHTML = '<span style="color:#8b6f8f; font-style:italic;">⏳ Loading recipe...</span>';
     try {
-        const response = await fetch('/chat', {
+        const response = await fetch('/chat/stream', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({query: `Give me a detailed recipe for ${rec.title} with ingredients and instructions`})
         });
-        const data = await response.json();
-        modal.querySelector('#recipe-content').innerHTML = `<div style="white-space: pre-wrap; text-align: left; line-height: 1.8; color: #2d3748;">${data.response}</div>`;
-    } catch (error) {
-        modal.querySelector('#recipe-content').innerHTML = '<p style="color: #e53e3e;">Failed to load recipe</p>';
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '', text = '';
+        contentEl.innerHTML = '<div id="recipe-text" style="white-space: pre-wrap; text-align: left; line-height: 1.8; color: #2d3748;"></div>';
+        const textEl = document.getElementById('recipe-text');
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop();
+            for (const part of parts) {
+                const eventMatch = part.match(/^event: (\w+)/);
+                const dataMatch = part.match(/^data: (.+)/m);
+                if (eventMatch && dataMatch && eventMatch[1] === 'token') {
+                    text += JSON.parse(dataMatch[1]).text;
+                    textEl.innerHTML = text.replace(/\n/g, '<br>');
+                }
+            }
+        }
+    } catch (e) {
+        document.getElementById('recipe-content').innerHTML = '<p style="color:#e53e3e;">Failed to load recipe</p>';
     }
 };
 

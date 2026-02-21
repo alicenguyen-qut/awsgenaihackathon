@@ -208,5 +208,4 @@ Infrastructure:
 
 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
 
-
 *Built by MealBuddy team and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Multi-Agent & Kiro*
