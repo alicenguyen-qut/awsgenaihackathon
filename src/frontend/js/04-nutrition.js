@@ -72,12 +72,45 @@ async function updateDashboard() {
     if (statsEl) {
         if (period === 'today') {
             const s = stats.stats;
+            const goal = stats.calorie_goal || 2000;
+            const remaining = stats.calories_remaining ?? Math.max(0, goal - s.calories);
+            const pct = Math.min(100, Math.round((s.calories / goal) * 100));
+            const over = s.calories > goal;
+            const barColor = over ? 'linear-gradient(90deg,#fc8181,#e53e3e)' : pct >= 75 ? 'linear-gradient(90deg,#f6ad55,#ed8936)' : 'linear-gradient(90deg,#74b9ff,#a29bfe)';
+            statsEl.style.display = 'block';
             statsEl.innerHTML = `
-                <div class="stat"><span>Calories</span><strong>${s.calories}</strong></div>
-                <div class="stat"><span>Protein</span><strong>${s.protein}g</strong></div>
-                <div class="stat"><span>Carbs</span><strong>${s.carbs}g</strong></div>
-                <div class="stat"><span>Fats</span><strong>${s.fats}g</strong></div>
+                <div style="background:linear-gradient(135deg,#f8f9ff,#f0f4ff);border:1px solid rgba(116,185,255,0.2);border-radius:20px;padding:20px 24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+                        <div>
+                            <div style="font-size:11px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔥 Calories Today</div>
+                            <div style="font-size:32px;font-weight:800;color:#2d3748;line-height:1;">${s.calories}<span style="font-size:16px;font-weight:400;color:#cbd5e0;"> / ${goal}</span></div>
+                        </div>
+                        <div style="text-align:center;background:${over ? 'linear-gradient(135deg,#fff5f5,#fed7d7)' : 'linear-gradient(135deg,#f0fff4,#c6f6d5)'};border-radius:14px;padding:10px 16px;min-width:80px;">
+                            <div style="font-size:10px;font-weight:700;color:${over ? '#c53030' : '#276749'};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${over ? 'Over' : 'Left'}</div>
+                            <div style="font-size:22px;font-weight:800;color:${over ? '#e53e3e' : '#38a169'};line-height:1;">${over ? s.calories - goal : remaining}</div>
+                        </div>
+                    </div>
+                    <div style="background:#e8edf5;border-radius:99px;height:8px;overflow:hidden;margin-bottom:6px;">
+                        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.6s cubic-bezier(.4,0,.2,1);"></div>
+                    </div>
+                    <div style="font-size:11px;color:#a0aec0;text-align:right;">${pct}% of daily goal</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;">
+                        <div style="background:linear-gradient(135deg,#ebf8ff,#bee3f8);border-radius:12px;padding:12px;text-align:center;">
+                            <div style="font-size:10px;font-weight:700;color:#2b6cb0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">💪 Protein</div>
+                            <div style="font-size:20px;font-weight:800;color:#2c5282;">${s.protein}<span style="font-size:12px;font-weight:500;">g</span></div>
+                        </div>
+                        <div style="background:linear-gradient(135deg,#fffff0,#fefcbf);border-radius:12px;padding:12px;text-align:center;">
+                            <div style="font-size:10px;font-weight:700;color:#975a16;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🌾 Carbs</div>
+                            <div style="font-size:20px;font-weight:800;color:#744210;">${s.carbs}<span style="font-size:12px;font-weight:500;">g</span></div>
+                        </div>
+                        <div style="background:linear-gradient(135deg,#fff5f5,#fed7d7);border-radius:12px;padding:12px;text-align:center;">
+                            <div style="font-size:10px;font-weight:700;color:#c53030;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🥑 Fats</div>
+                            <div style="font-size:20px;font-weight:800;color:#9b2c2c;">${s.fats}<span style="font-size:12px;font-weight:500;">g</span></div>
+                        </div>
+                    </div>
+                </div>
             `;
+            document.getElementById('calorie-progress-bar')?.remove();
         } else {
             const a = analytics.analytics;
             statsEl.innerHTML = `
