@@ -157,7 +157,7 @@ awsgenaihackathon/
 ## 8. API Endpoints
 
 ### 8.1 Authentication
-- `POST /api/login` — Login or register (returns `is_new_user` flag)
+- `POST /api/login` — Login or register
 - `POST /api/logout` — Clear session
 - `GET /api/session` — Get current session, username, and chat list
 - `POST /api/change-password` — Change password
@@ -166,11 +166,11 @@ awsgenaihackathon/
 - `POST /api/chat/new` — Create new chat
 - `GET /api/chat/<id>` — Get chat by ID
 - `DELETE /api/chat/<id>` — Delete chat
-- `POST /chat` — Send message; returns `{ response, tool_calls }`
+- `POST /chat` — Send and receive chat messages
 - `POST /api/clear-chats` — Clear all chat history
 
 ### 8.3 Nutrition Tracking
-- `POST /api/nutrition/log` — Log a meal (calories, protein, carbs, fats)
+- `POST /api/nutrition/log` — Log a meal 
 - `GET /api/nutrition/logs?date=YYYY-MM-DD` — Get logs for a date
 - `GET /api/nutrition/stats?date=YYYY-MM-DD` — Get daily totals
 - `DELETE /api/nutrition/logs/<id>` — Delete a log entry
@@ -179,7 +179,7 @@ awsgenaihackathon/
 - `GET /api/recommendations/daily` — AI-powered meal recommendations
 
 ### 8.4 Meal Features
-- `POST /api/favorites` — Toggle favourite (add/remove)
+- `POST /api/favorites` — Toggle favourite
 - `GET /api/favorites` — List all favourites
 - `GET /api/meal-plan` — Get weekly plan
 - `POST /api/meal-plan` — Save weekly plan
@@ -197,7 +197,7 @@ awsgenaihackathon/
 - `DELETE /api/profile-photo` — Delete photo
 
 ### 8.6 File Management
-- `POST /upload` — Upload file (.txt, .docx, .pdf); auto-embeds to S3 in AWS mode
+- `POST /upload` — Upload file (.txt, .docx, .pdf); auto-embeds to S3 
 - `GET /api/files` — List uploaded files
 - `GET /api/files/<id>` — Get file content/metadata
 - `DELETE /api/files/<id>` — Delete file and remove S3 embeddings
