@@ -93,6 +93,7 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 
 The hackathon stack proves the concept. Scaling to real users requires future enhancements built for concurrency, durability, and observability.
 
+(WIP)
 ![Future Architecture](architecture_diagrams/architecture_future.png)
 
 ```
