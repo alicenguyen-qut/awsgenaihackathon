@@ -6,7 +6,6 @@
 - Alice Nguyen – alice.nhnt@gmail.com
 - Evelyn Le – evelyn.le.contact@gmail.com
 
-
 ---
 
 ## 1. Use Case
