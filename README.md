@@ -1,29 +1,30 @@
 # 🍳 MealBuddy — Your Daily Buddy for Smarter Eating Habits
 
-> Team Number: <Number>
+> **ANZ Diversity Hackathon 2026 - Team 54 - MealBuddy**
 
-> Team Members: <Number>
+> **Team members:**
+- Alice Nguyen – alice.nhnt@gmail.com
+- Evelyn Le – evelyn.le.contact@gmail.com
 
-> Built and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Agent & Kiro
 
 ---
 
 ## 1. Use Case
 
-### The Problem
+### The Problem:
 
 Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **66% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2024)* - and only **4% of Australian adults** meet the recommended daily vegetable intake *(AIHW, 2024)*. Poor diet costs the Australian healthcare system an estimated **$6 billion per year** in direct costs *(AIHW, Australian Burden of Disease Study, 2022)*.
 
 The intent to eat better is not the problem. Research consistently shows that **most people who begin a healthy eating plan struggle to sustain it long-term** - not from lack of motivation, but from the cognitive and logistical burden of maintaining it *(Teixeira et al., IJBNPA, 2015)*. Meal planning takes 2–3 hours per week. A dietitian costs $100–$400 per session. Calorie tracking apps require manual entry for every meal. The tools are fragmented, generic, and exhausting.
 
-### Who Is This For
+### Who Is This For:
 
 - **Busy professionals** who want to eat well but have no time to plan
 - **Health-conscious individuals** managing dietary restrictions, allergies, or chronic conditions
 - **Fitness enthusiasts** tracking macros without the friction of manual logging
 - **Budget-conscious households** reducing food waste through smarter weekly planning
 
-### Value Proposition
+### Value Proposition:
 
 MealBuddy brings recipe search, meal planning, shopping lists, and nutrition tracking together in a **single personalised conversation**. Set your dietary preferences once. From that point, every interaction is personalised:
 
@@ -34,7 +35,7 @@ MealBuddy brings recipe search, meal planning, shopping lists, and nutrition tra
 
 **What previously took 2–3 hours of weekly planning takes under 3 minutes.**
 
-### Why This Is Disruptive
+### Why This Is Disruptive:
 
 Every existing nutrition app is reactive — you open it, input data, it shows you a number. MealBuddy is the first to combine **conversational AI**, **semantic search over personal documents (RAG)**, and **autonomous multi-step action** in a single solution.
 
@@ -48,7 +49,7 @@ Personalised nutrition guidance has always been expensive and time-consuming. Me
 
 ## 2. Architecture
 
-### Hackathon Demo Architecture
+### Hackathon Demo Architecture:
 
 The below architecture was chosen to validate the full product concept end-to-end within the constraints of a hackathon - fast to deploy, zero infrastructure overhead, and cheap enough to run without budget concerns. 
 
@@ -89,7 +90,7 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 
 ---
 
-### Future Enhancement Architecture
+### Future Enhancement Architecture:
 
 The hackathon stack proves the concept. Scaling to real users requires future enhancements built for concurrency, durability, and observability.
 
@@ -152,3 +153,6 @@ AWS Fargate (ECS) ◄── Auto Scaling
 📋 [Webapp Features](FEATURES.md) 
 
 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
+
+
+*Built by MealBuddy team and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Agent & Kiro*
