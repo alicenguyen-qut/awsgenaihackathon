@@ -77,6 +77,18 @@ async function updateDashboard() {
             const pct = Math.min(100, Math.round((s.calories / goal) * 100));
             const over = s.calories > goal;
             const barColor = over ? 'linear-gradient(90deg,#fc8181,#e53e3e)' : pct >= 75 ? 'linear-gradient(90deg,#f6ad55,#ed8936)' : 'linear-gradient(90deg,#74b9ff,#a29bfe)';
+            const b = stats.goal_breakdown || {};
+            const goalNote = b.method === 'mifflin'
+                ? `<div style="margin-top:12px;padding:10px 14px;background:rgba(116,185,255,0.08);border-radius:10px;border-left:3px solid #74b9ff;font-size:12px;color:#4a5568;line-height:1.7;">
+                    <span style="font-weight:700;color:#2b6cb0;">📐 How your goal was calculated</span><br>
+                    Mifflin-St Jeor BMR: <strong>${b.bmr} cal</strong><br>
+                    × 1.375 activity factor → TDEE: <strong>${b.tdee} cal</strong><br>
+                    ${b.adjustment !== 0 ? `Goal adjustment (${b.inputs?.health_goal}): <strong>${b.adjustment > 0 ? '+' : ''}${b.adjustment} cal</strong><br>` : ''}
+                    Daily goal: <strong>${b.goal} cal</strong>
+                   </div>`
+                : `<div style="margin-top:12px;padding:8px 14px;background:rgba(160,174,192,0.08);border-radius:10px;border-left:3px solid #a0aec0;font-size:12px;color:#718096;">
+                    💡 Goal based on <strong>${b.health_goal || 'default'}</strong> preset. Add your age, weight, height &amp; gender in Settings for a personalised goal.
+                   </div>`;
             statsEl.style.display = 'block';
             statsEl.innerHTML = `
                 <div style="background:linear-gradient(135deg,#f8f9ff,#f0f4ff);border:1px solid rgba(116,185,255,0.2);border-radius:20px;padding:20px 24px;">
@@ -108,6 +120,7 @@ async function updateDashboard() {
                             <div style="font-size:20px;font-weight:800;color:#9b2c2c;">${s.fats}<span style="font-size:12px;font-weight:500;">g</span></div>
                         </div>
                     </div>
+                    ${goalNote}
                 </div>
             `;
             document.getElementById('calorie-progress-bar')?.remove();
