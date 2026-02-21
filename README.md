@@ -10,33 +10,34 @@
 
 ## 1. Use Case
 
-### The Problem:
+### 1.1 The Problem
 
 Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **66% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2024)* - and only **4% of Australian adults** meet the recommended daily vegetable intake *(AIHW, 2024)*. Poor diet costs the Australian healthcare system an estimated **$6 billion per year** in direct costs *(AIHW, Australian Burden of Disease Study, 2022)*.
 
 The intent to eat better is not the problem. Research consistently shows that **most people who begin a healthy eating plan struggle to sustain it long-term** - not from lack of motivation, but from the cognitive and logistical burden of maintaining it *(Teixeira et al., IJBNPA, 2015)*. Meal planning takes 2–3 hours per week. A dietitian costs ~200 AUD for a session  *(Vively, 2024)*. Calorie tracking apps require manual entry for every meal. The tools are fragmented, generic, and exhausting.
 
-### Value Proposition:
+### 1.2 MealBuddy - The Solution, Vision and Value Proposition
 
-MealBuddy delivers **personalised, proactive nutrition guidance** - combining recipe search, meal planning, shopping lists, and nutrition tracking in a **single AI-powered conversation**.
+MealBuddy's vision is to address the gap of **fragmented, generic, and inaccessible nutrition tools** - delivering **personalised, proactive nutrition support** by combining recipe search, meal planning, shopping lists, and nutrition tracking in a **single AI-powered conversation**.
 
-| Value Driver | What MealBuddy Does |
+| Value Proposition | How MealBuddy Helps |
 |---|---|
 | **Time savings** | Reduces 2–3 hours of weekly meal planning to under 10 minutes |
 | **Personalisation** | Personalises based on users' dietary preferences, goals, and restrictions across every user interaction |
-| **Accessibility** | Available 24/7 at affordable cost |
+| **Accessibility and cost-saving** | Available 24/7 at affordable cost |
 | **Proactive planning** | Autonomously generates a full week of meals - no manual input required |
 | **Document intelligence** | Reads and applies user-upload data directly into the meal plan |
 | **Real-time tracking** | Instant answers on remaining calorie budget, without manual logging |
 
-### Who Is This For:
+
+### 1.3 Targeted Users
 
 - **Busy professionals** who want to eat well but have no time to plan
 - **Health-conscious individuals** managing dietary restrictions, allergies, or chronic conditions
 - **Fitness enthusiasts** tracking macros without the friction of manual logging
 - **Budget-conscious households** reducing food waste through smarter weekly planning
 
-### Market Analysis (Australia):
+### 1.4 Market Analysis (Australia)
 
 The scale of the problem translates directly into market opportunity:
 
@@ -49,7 +50,7 @@ The scale of the problem translates directly into market opportunity:
 - Of these, the digitally active cohort aged 25–54 (the primary health-app demographic) represents roughly **~8 million Australians** *(ABS, 2021 Census)* - this is the SAM
 - Capturing just **1–2% of SAM** in year 3 = **80,000–160,000 users** at AUD 10–15/month = **AUD 10–29M ARR**
 
-### Competitive & Partnership Landscape:
+### 1.5 Competitive & Partnership Landscape
 
 **Competitors:**
 
@@ -60,8 +61,7 @@ The scale of the problem translates directly into market opportunity:
 | **ChatGPT / general LLMs** | Ad-hoc nutrition Q&A | No persistent profile, no meal plan memory, no document RAG, no structured tracking |
 
 
-
-**MealBuddy's competitive moat:** Few existing solutions combine a persistent user profile, conversational AI, document ingestion (RAG), and autonomous multi-step action in a single nutrition product. Every existing app is reactive - open it, input data, it shows a number. MealBuddy is designed to *plan with users*, not just *record after them* - making personalised nutrition guidance accessible to anyone, at the cost of a conversation.
+**MealBuddy's competitive moat:** Few existing solutions combine a persistent user profile, conversational AI, document ingestion (RAG), and autonomous multi-step action in a single nutrition product. Every existing app is reactive - open it, input data, it shows a number. MealBuddy is designed to *plan with users*, not just *record after them* - making personalised nutrition support accessible to anyone, at the cost of a conversation.
 
 **Potential business partnership opportunities:** Meal kit services like HelloFresh and Marley Spoon are a natural integration opportunity - MealBuddy could recommend their kits when users want a no-prep option, or auto-populate a shopping list that links to their catalogue. Partnerships with grocery retailers (e.g. Woolworths, Coles) could take this further - enabling users to purchase ingredients directly from within the app, turning a meal plan into a completed grocery order in one step.
 
@@ -71,7 +71,7 @@ The scale of the problem translates directly into market opportunity:
 
 ## 2. Architecture Diagrams
 
-### Hackathon Demo Architecture:
+### 2.1 Hackathon Demo Architecture
 
 The below architecture was chosen to validate the full product concept end-to-end within the constraints of a hackathon - fast to deploy, zero infrastructure overhead, and cheap enough to run without budget concerns. 
 
@@ -112,7 +112,7 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 
 ---
 
-### Future Enhancement Architecture:
+### 2.2 Future Enhancement Architecture
 
 The hackathon stack proves the concept. Scaling to real users requires future enhancements built for concurrency, durability, and observability.
 
