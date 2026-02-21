@@ -10,13 +10,18 @@ async function logMeal(mealData) {
     return await res.json();
 }
 
+function getLocalDate() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 async function getTodayStats() {
-    const res = await fetch(`/api/nutrition/stats?date=${new Date().toISOString().split('T')[0]}`);
+    const res = await fetch(`/api/nutrition/stats?date=${getLocalDate()}`);
     return res.ok ? await res.json() : { stats: { calories: 0, protein: 0, carbs: 0, fats: 0 }, meal_count: 0 };
 }
 
 async function getTodayLogs() {
-    const res = await fetch(`/api/nutrition/logs?date=${new Date().toISOString().split('T')[0]}`);
+    const res = await fetch(`/api/nutrition/logs?date=${getLocalDate()}`);
     return res.ok ? await res.json() : { logs: [] };
 }
 
@@ -131,6 +136,7 @@ window.showLogMealModal = () => {
 
 window.submitMealLog = async () => {
     const data = {
+        date: getLocalDate(),
         meal_type: document.getElementById('meal-type').value,
         name: document.getElementById('meal-name').value,
         calories: parseInt(document.getElementById('meal-cal').value) || 0,
