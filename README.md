@@ -158,7 +158,7 @@ AWS ECS Fargate (Containerised Compute, Auto Scaling)
  │
  ├──► Redis Cache  (RAG + LLM response caching)
  │
- └──► Amazon CloudWatch + X-Ray (App Monitoring)
+ └──► Amazon CloudWatch (Logging + Monitoring)
 
 Infrastructure:
  ├── AWS CloudFormation (IaC deployment)
@@ -174,16 +174,16 @@ Infrastructure:
 |---|---|---|---|
 | **Compute & Infrastructure** | ECS Fargate | Containerised compute | Horizontally auto-scaled, no server management, high concurrency |
 | | CloudFormation (IaC) | CI/CD deployment | Reusable, automated stack deployment |
-| | Amazon ECR + IAM Roles | Container registry + access control | Least-privilege access, replaces embedded credentials |
+| | Amazon ECR + IAM Roles | Container registry + access control | Least-privilege access |
 | **Intelligent Agent** | AWS Bedrock AgentCore | Agent orchestration | Identity boundaries, tool control, memory persistence, GenAI observability |
 | | Claude Sonnet / Opus | LLM reasoning | Complex multi-step planning, structured outputs, advanced document analysis |
 | | Titan Embeddings V2 | Semantic search & embeddings | Production-grade RAG, knowledge base ingestion |
-| **Data & Retrieval** | OpenSearch Serverless | Vector knowledge base | Persistent, scalable vector index for production RAG |
+| **Databases & Storage** | OpenSearch Serverless | Vector knowledge base | Persistent, scalable vector index for production RAG |
 | | DynamoDB | User metadata & sessions | Single-digit ms reads, TTL-based expiry |
 | | Amazon S3 | Object storage | Durable storage for uploads, assets, static content |
 | | Redis Cache | Response & RAG caching | Reduces Bedrock latency and cost under load |
 | **Edge, Security & Observability** | CloudFront + WAF | CDN + security | DDoS protection, rate limiting, geo-restriction |
-| | CloudWatch + X-Ray | Monitoring & tracing | Distributed tracing across Fargate, Bedrock, OpenSearch; agentic workflow debugging |
+| | CloudWatch | Logging + Monitoring | Logging and monitoring across deployed AWS services |
 
 ---
 
