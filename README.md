@@ -93,9 +93,6 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 
 The hackathon stack proves the concept. Scaling to real users requires future enhancements built for concurrency, durability, and observability.
 
-(WIP)
-![Future Architecture](architecture_diagrams/architecture_future.png)
-
 ```
 Users
  │
@@ -122,6 +119,8 @@ AWS Fargate (ECS) ◄── Auto Scaling
  │
  └──► Amazon CloudWatch + X-Ray     (observability)
 ```
+(WIP)
+![Future Architecture](architecture_diagrams/architecture_future.png)
 
 **Future upgrades and rationale**
 
