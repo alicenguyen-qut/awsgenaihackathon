@@ -88,9 +88,11 @@ async function sendMessage() {
         const data = await response.json();
         addMessage(data.response, false);
         
-        // Display agent tool calls if any
-        if (data.tool_calls && data.tool_calls.length > 0) {
-            displayToolCalls(data.tool_calls);
+        // Display agent tool calls if any (only for mutating actions, not searches)
+        const mutatingTools = ['add_to_favorites', 'add_to_meal_plan', 'add_to_shopping_list', 'log_nutrition'];
+        const actionableCalls = data.tool_calls ? data.tool_calls.filter(c => mutatingTools.includes(c.tool)) : [];
+        if (actionableCalls.length > 0) {
+            displayToolCalls(actionableCalls);
             // Reload context after agent actions
             await loadAgentContext();
         }

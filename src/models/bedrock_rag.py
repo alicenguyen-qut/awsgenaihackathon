@@ -195,12 +195,25 @@ class BedrockRAG:
             tool_calls_log.append({"tool": "get_nutrition_stats", "input": {}, "result": result})
             return json.dumps(result)
 
-        # Build conversation history for Strands
-        messages = [
-            {"role": m["role"], "content": m["content"]}
-            for m in (chat_history or [])
-            if m.get("role") in ("user", "assistant") and m.get("content")
-        ]
+        # Inject chat history
+        history_text = ""
+        for m in (chat_history or [])[-6:]:
+            role = m.get("role", "")
+            if role not in ("user", "assistant"):
+                continue
+            c = m.get("content", "")
+            if isinstance(c, list):
+                c = " ".join(b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text")
+            elif isinstance(c, dict):
+                c = c.get("text", "") or c.get("S", "")
+            if str(c).strip():
+                history_text += f"{role.capitalize()}: {c}\n"
+
+        full_query = (
+            f"Recipe Context:\n{context}\n\n"
+            + (f"Recent conversation:\n{history_text}\n" if history_text else "")
+            + f"User Request: {query}"
+        )
 
         try:
             model = BedrockModel(
@@ -214,12 +227,9 @@ class BedrockRAG:
                 system_prompt=system_prompt,
                 tools=[search_recipes_tool, add_to_favorites, add_to_meal_plan,
                        add_to_shopping_list, log_nutrition, get_nutrition_stats],
-                messages=messages,
             )
-
-            full_query = f"Recipe Context:\n{context}\n\nUser Request: {query}"
             result = agent(full_query)
-            response_text = str(result)
+            response_text = str(result).strip()
 
             return {"response": response_text, "tool_calls": tool_calls_log}
 

@@ -155,7 +155,7 @@ async function loadMealPlan() {
                                 onfocus="this.style.borderColor='${day.color}'; this.style.boxShadow='0 0 0 3px ${day.color}20'"
                                 onblur="this.style.borderColor='rgba(0,0,0,0.1)'; this.style.boxShadow='none'">${meal}</textarea>
                             <div style="display: flex; gap: 8px; margin-top: 12px;">
-                                ${meal ? `<button onclick="viewRecipeDetails('${day.name}', '${meal.replace(/'/g, "\\'")}')"
+                                ${meal ? `<button data-day="${day.name}" data-meal="${meal.replace(/"/g, '&quot;')}" onclick="viewRecipeDetails(this.dataset.day, this.dataset.meal)"
                                     style="flex: 1; padding: 8px; background: ${day.color}; color: #2d3748; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
                                     onmouseover="this.style.opacity='0.8'"
                                     onmouseout="this.style.opacity='1'">📖 View Recipe</button>` : ''}
