@@ -172,12 +172,37 @@ async function sendMessage() {
                 if (event === 'status') {
                     showStatus(contentEl, data.message);
                     container.scrollTop = container.scrollHeight;
+                } else if (event === 'tool_action') {
+                    clearInterval(_statusInterval);
+                    const s = contentEl.querySelector('.stream-status');
+                    if (s) s.remove();
+                    const label = data.tool.replace(/_/g, ' ');
+                    const pill = document.createElement('div');
+                    pill.style.cssText = 'font-size:11px;color:#666;background:rgba(116,185,255,0.15);border:1px solid rgba(116,185,255,0.4);border-radius:12px;padding:2px 10px;margin:4px 0;display:inline-block;';
+                    pill.textContent = `⚙️ ${label}`;
+                    contentEl.appendChild(pill);
+                    contentEl.appendChild(document.createElement('br'));
+                    container.scrollTop = container.scrollHeight;
                 } else if (event === 'token') {
-                    if (fullResponse === '') { clearInterval(_statusInterval); contentEl.innerHTML = ''; }
+                    if (fullResponse === '') {
+                        clearInterval(_statusInterval);
+                        const s = contentEl.querySelector('.stream-status');
+                        if (s) s.remove();
+                    }
                     fullResponse += data.text;
-                    contentEl.innerHTML = renderMarkdown(fullResponse);
+                    // preserve tool pills, update only the text node after them
+                    let textNode = contentEl.querySelector('.chat-response-text');
+                    if (!textNode) {
+                        textNode = document.createElement('div');
+                        textNode.className = 'chat-response-text';
+                        contentEl.appendChild(textNode);
+                    }
+                    textNode.innerHTML = renderMarkdown(fullResponse);
                     container.scrollTop = container.scrollHeight;
                 } else if (event === 'done') {
+                    clearInterval(_statusInterval);
+                    const s = contentEl.querySelector('.stream-status');
+                    if (s) s.remove();
                     toolCalls = data.tool_calls || [];
                 } else if (event === 'error') {
                     contentEl.innerHTML = `<span style="color:red;">Error: ${data.message}</span>`;
@@ -264,14 +289,14 @@ function showWelcomeMessage() {
             <h2>MealBuddy 🍳</h2>
                     <p style="font-size:15px; color:#8b6f8f; font-style:italic; margin-bottom:8px;">Your Personalised AI Nutrition Buddy</p>
             <div class="suggestions">
-                <div class="suggestion-card" onclick="sendSuggestion('Show me high-protein low-carb recipes')">
+                <div class="suggestion-card" onclick="sendSuggestion('Show me high-protein low-carb meal ideas')">
                     <div class="suggestion-icon">💪</div>
                     <div class="suggestion-title">High-Protein Meals</div>
                     <div class="suggestion-desc">Discover delicious low-carb recipes perfect for building muscle and staying energized</div>
                 </div>
                 <div class="suggestion-card" onclick="sendSuggestion('I need a vegan dinner idea')">
                     <div class="suggestion-icon">🌱</div>
-                    <div class="suggestion-title">Vegan Recipes</div>
+                    <div class="suggestion-title">Vegan Meals</div>
                     <div class="suggestion-desc">Explore plant-based meals that are nutritious, flavorful, and easy to prepare</div>
                 </div>
                 <div class="suggestion-card" onclick="sendSuggestion('Quick breakfast under 15 minutes')">

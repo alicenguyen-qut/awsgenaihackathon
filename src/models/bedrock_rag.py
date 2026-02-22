@@ -169,11 +169,8 @@ class BedrockRAG:
                 history_text += f"{role.capitalize()}: {c}\n"
 
         recipe_context = get_recipe_context()
-        # Only inject meal plan context for planning/tracking queries, not recipe browsing
-        q_lower = query.lower()
-        is_browsing = any(w in q_lower for w in ['show', 'suggest', 'recommend', 'idea', 'recipe', 'what can', 'what should'])
         full_query = (
-            (f"Context:\n{context}\n\n" if context and not is_browsing else "")
+            (f"Context:\n{context}\n\n" if context else "")
             + (f"Relevant Recipes:\n{recipe_context}\n\n" if recipe_context else "")
             + (f"Recent conversation:\n{history_text}\n" if history_text else "")
             + f"User Request: {query}"
@@ -218,9 +215,10 @@ class BedrockRAG:
                 "You are MealBuddy, a friendly AI nutrition assistant.\n"
                 "When the user asks to see, browse, or get recipe suggestions, answer DIRECTLY using the Relevant Recipes in the context. "
                 "Present them as a formatted list with name, description, tags, and calories. NEVER refuse a recipe request — just show them.\n\n"
+                "If the user asks for ideas, suggestions, recipes, or inspiration — answer directly from Relevant Recipes. Do NOT call any tool.\n"
                 "Only use tools for these specific actions:\n"
-                "- ask_planner: user explicitly says ADD / PLAN / SAVE / SHOPPING LIST (mutating actions only, never for browsing)\n"
-                "- ask_nutrition: user wants to CHECK or LOG their own calorie/macro numbers (e.g. how many calories have I had, log my lunch). NEVER use for food or meal suggestions.\n"
+                "- ask_planner: user explicitly uses words like ADD, PLAN, SAVE, or SHOPPING LIST (e.g. 'add this to my plan', 'save to favourites', 'generate shopping list'). NEVER use for browsing, ideas, or suggestions.\n"
+                "- ask_nutrition: user explicitly asks to CHECK or LOG calories/macros (e.g. 'how many calories have I had', 'log my lunch'). NEVER use for food or meal suggestions.\n"
                 "- ask_document: user asks about their uploaded documents or personal dietary files\n\n"
                 "Never call more than one tool per message.\n"
                 "CRITICAL: After a tool result, write a full response with the actual details returned. Never say vague phrases like 'I\'ve completed the action'."

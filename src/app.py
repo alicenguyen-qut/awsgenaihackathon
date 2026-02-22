@@ -847,6 +847,7 @@ def chat_stream():
                 yield sse('status', {'message': '✨ Thinking...'})
 
             def tool_handler(tool_name, tool_input):
+                token_queue.put(('__tool__', tool_name, tool_input))
                 try:
                     if tool_name == 'search_recipes':
                         results = bedrock_rag.search_recipes(tool_input.get('query', ''), recipes, tool_input.get('top_k', 3))
@@ -941,6 +942,8 @@ def chat_stream():
                     result = item[1]
                 elif isinstance(item, tuple) and item[0] == '__error__':
                     raise item[1]
+                elif isinstance(item, tuple) and item[0] == '__tool__':
+                    yield sse('tool_action', {'tool': item[1], 'input': item[2]})
                 else:
                     full_streamed += item
                     yield sse('token', {'text': item})
