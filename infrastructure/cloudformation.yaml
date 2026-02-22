@@ -37,7 +37,7 @@ Resources:
     Type: AWS::ElasticBeanstalk::Environment
     Properties:
       ApplicationName: !Ref Application
-      EnvironmentName: mealbuddy-env
+      EnvironmentName: mealbuddy
       SolutionStackName: "64bit Amazon Linux 2023 v4.9.3 running Python 3.11"
       OptionSettings:
         - Namespace: aws:elasticbeanstalk:environment
