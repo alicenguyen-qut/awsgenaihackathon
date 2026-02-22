@@ -21,7 +21,9 @@ User → Flask UI → Elastic Beanstalk → Bedrock (Claude 3 Haiku + Titan Embe
 - **💡 Smart Recommendations** — AI suggests meals based on today's nutrition gaps and user profile
 
 ### 2.2 🤖 Strands Agent System
-- **Available tools** — `search_recipes`, `add_to_favorites`, `add_to_meal_plan`, `add_to_shopping_list`, `log_nutrition`, `get_nutrition_stats`
+- **Coordinator agent tools** — `ask_planner`, `ask_nutrition`, `ask_document` (routes to specialist sub-agents)
+- **Planner sub-agent tools** — `search_recipes`, `add_to_meal_plan`, `add_to_shopping_list`, `add_to_favorites`
+- **Nutrition sub-agent tools** — `log_nutrition`, `get_nutrition_stats`
 - **Tool call logging** — All agent actions returned to frontend for transparent visual feedback
 - **RAG over user uploads** — Per-user embeddings for personalisation
 
@@ -155,6 +157,7 @@ awsgenaihackathon/
 - `GET /api/chat/<id>` — Get chat by ID
 - `DELETE /api/chat/<id>` — Delete chat
 - `POST /chat` — Send and receive chat messages
+- `POST /chat/stream` — Send chat message and receive streaming response
 - `POST /api/clear-chats` — Clear all chat history
 
 ### 7.3 Nutrition Tracking
@@ -185,7 +188,8 @@ awsgenaihackathon/
 - `DELETE /api/profile-photo` — Delete photo
 
 ### 7.6 File Management
-- `POST /upload` — Upload file (.txt, .docx, .pdf); auto-embeds to S3 
+- `POST /upload` — Upload file (.txt, .docx, .pdf); auto-embeds to S3
+- `GET /uploads/<filename>` — Serve an uploaded file 
 - `GET /api/files` — List uploaded files
 - `GET /api/files/<id>` — Get file content/metadata
 - `DELETE /api/files/<id>` — Delete file and remove S3 embeddings

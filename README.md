@@ -100,17 +100,19 @@ AWS Elastic Beanstalk  (t3.micro EC2)
 User Message
      │
      ▼
-Coordinator Agent
+Coordinator Agent (routes to specialist agents if needed)
      │
      ├──► 🥗 Planner Agent      → meal planning, shopping list, add-to-favourite recipes
      ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, meals suggestions
      └──► 📄 Document Agent     → RAG over user-uploaded PDFs, dietary restrictions, goals etc.
 ```
+**Why multi-agent?** Each specialist agent has its focused tasks - this significantly improves the chatbot's reliability compared to a single agent handling all intents.
+
 **Hackathon Architecture Diagram**
 
 <img src="architecture_diagrams/architecture_hackathon.png" width="800">
 
-
+<br></br>
 **AWS Services Selected with a focus on demonstrating PoC and being cost-optimised for Hackathon Demo**
 
 | Service | What it is used for | Why chosen |
@@ -202,9 +204,9 @@ Infrastructure:
 
 ---
 
-## 5. Other Documentatuion
+## 5. Other Documentation
 
-📋 [Webapp Features](FEATURES.md) 
+📋 [Application Features](FEATURES.md) 
 
 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
 
