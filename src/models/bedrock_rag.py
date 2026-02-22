@@ -205,8 +205,19 @@ class BedrockRAG:
                 last_assistant = str(c).strip()
                 break
 
+        allergies = ", ".join(user_profile.get("allergies", [])) if user_profile else ""
+        dietary = ", ".join(user_profile.get("dietary", [])) if user_profile else ""
+        profile_context = ""
+        if allergies or dietary:
+            profile_context = "User Profile — "
+            if allergies:
+                profile_context += f"allergies: {allergies}. "
+            if dietary:
+                profile_context += f"dietary preferences: {dietary}."
+
         full_query = (
             (f"Context:\n{context}\n\n" if context else "")
+            + (f"{profile_context}\n\n" if profile_context else "")
             + (f"Relevant Recipes:\n{recipe_context}\n\n" if recipe_context else "")
             + (f"Previously discussed:\n{last_assistant}\n\n" if last_assistant else "")
             + f"User Request: {query}"

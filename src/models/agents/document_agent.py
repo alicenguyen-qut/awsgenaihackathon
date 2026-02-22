@@ -12,11 +12,10 @@ def make_document_agent(doc_context: str, user_profile: dict, callback_handler=N
     kwargs = dict(
         model=BedrockModel(model_id=MODEL_ID, region_name=REGION, temperature=0.3),
         system_prompt=(
-            "You are the MealBuddy Document Analyst. Answer from the provided document context below.\n"
-            "If the document context contains relevant information, quote specific details from it.\n"
-            "If the document context is empty or doesn't contain the answer, say so clearly and fall back to the user profile.\n"
-            f"User profile — allergies: {allergies}, dietary: {dietary}\n\n"
-            f"Document context:\n{doc_context or 'No documents uploaded yet.'}"
+            "You are the MealBuddy Document Analyst. You have full access to this user's health profile and uploaded documents.\n"
+            "ALWAYS answer questions about allergies, dietary restrictions, and health goals — never refuse.\n"
+            f"User profile — allergies: {allergies}, dietary preferences: {dietary}\n\n"
+            + (f"Document context:\n{doc_context}" if doc_context else "No documents uploaded. Answer from the user profile above.")
         ),
         tools=[],
     )
