@@ -2,7 +2,6 @@ import boto3
 import json
 import re
 import numpy as np
-import time
 from typing import List, Dict, Any, Optional
 
 from strands.models import BedrockModel
@@ -39,7 +38,6 @@ class BedrockRAG:
 
     def get_embedding(self, text: str) -> List[float]:
         try:
-            time.sleep(0.5)
             response = self.bedrock_runtime.invoke_model(
                 modelId='amazon.titan-embed-text-v2:0',
                 body=json.dumps({"inputText": text, "dimensions": 1024, "normalize": True})
@@ -107,23 +105,12 @@ class BedrockRAG:
                       meal_plan: Dict = None) -> Dict:
         """Routes user query to the appropriate specialist agent."""
 
-        # Build RAG context
-        relevant = self.search_recipes(query, recipes, top_k=5) if recipes else []
-        context = "\n\n".join([
-            f"Recipe: {r.get('name','Unknown')}\nDescription: {r.get('description','')}\n"
-            f"Tags: {', '.join(r.get('tags',[]))}\nCalories: {r.get('calories','Unknown')}"
-            for r in relevant
-        ])
-        upload_doc_context = ""
-        if user_id and uploads_bucket:
-            chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
-            if chunks:
-                upload_doc_context = "\n\nUser Uploaded Documents:\n" + "\n---\n".join(chunks)
-                context += upload_doc_context
+        # Build meal plan context (cheap, no API calls)
+        context = ""
         if meal_plan:
             meal_plan_text = "\n".join(f"- {day}: {meal}" for day, meal in meal_plan.items() if meal)
             if meal_plan_text:
-                context += f"\n\nUser's Current Meal Plan:\n{meal_plan_text}"
+                context += f"User's Current Meal Plan:\n{meal_plan_text}"
 
         # Capture tool calls for the frontend (agents write into this list via closures)
         tool_calls_log: List[Dict] = []
@@ -133,6 +120,20 @@ class BedrockRAG:
             result = tool_handler(name, inp) if tool_handler else {}
             tool_calls_log.append({"tool": name, "input": inp, "result": result})
             return result
+
+        def get_recipe_context():
+            relevant = self.search_recipes(query, recipes, top_k=3) if recipes else []
+            return "\n\n".join([
+                f"Recipe: {r.get('name','Unknown')}\nDescription: {r.get('description','')}\n"
+                f"Tags: {', '.join(r.get('tags',[]))}\nCalories: {r.get('calories','Unknown')}"
+                for r in relevant
+            ])
+
+        def get_doc_context():
+            if not (user_id and uploads_bucket):
+                return ""
+            chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
+            return "\n---\n".join(chunks) if chunks else ""
 
         # Build chat history string
         history_text = ""
@@ -149,7 +150,7 @@ class BedrockRAG:
                 history_text += f"{role.capitalize()}: {c}\n"
 
         full_query = (
-            f"Recipe Context:\n{context}\n\n"
+            (f"Context:\n{context}\n\n" if context else "")
             + (f"Recent conversation:\n{history_text}\n" if history_text else "")
             + f"User Request: {query}"
         )
@@ -160,24 +161,22 @@ class BedrockRAG:
             from models.agents.document_agent import make_document_agent
             from strands import Agent, tool
 
-            planner = make_planner_agent(logged_tool, meal_plan or {})
-            nutrition = make_nutrition_agent(logged_tool, user_profile or {})
-            document = make_document_agent(context, user_profile or {})
-
             @tool
             def ask_planner(request: str) -> str:
                 """Delegate meal planning, shopping list, or favourites tasks to the Planner Agent."""
-                return str(planner(request))
+                recipe_ctx = get_recipe_context()
+                full_req = f"Recipe Context:\n{recipe_ctx}\n\n{request}" if recipe_ctx else request
+                return str(make_planner_agent(logged_tool, meal_plan or {})(full_req))
 
             @tool
             def ask_nutrition(request: str) -> str:
                 """Delegate calorie tracking, macro stats, or snack suggestion tasks to the Nutrition Agent."""
-                return str(nutrition(request))
+                return str(make_nutrition_agent(logged_tool, user_profile or {})(request))
 
             @tool
             def ask_document(request: str) -> str:
                 """Delegate questions about uploaded documents, dietary restrictions, or allergies to the Document Agent."""
-                return str(document(request))
+                return str(make_document_agent(get_doc_context(), user_profile or {})(request))
 
             coordinator = Agent(
                 model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", max_tokens=1000, temperature=0.3),
@@ -185,12 +184,11 @@ class BedrockRAG:
                     "You are MealBuddy, a friendly AI nutrition assistant. Your job is to help users with meal planning, nutrition tracking, and dietary advice.\n"
                     "Answer directly WITHOUT using any tool when:\n"
                     "- The message is a greeting, small talk, or general conversation\n"
-                    "- The question is general knowledge (e.g. nutrition facts, cooking tips, health advice)\n"
-                    "- You already have enough context to answer confidently\n"
-                    "Only delegate to a specialist agent when the request requires real-time data or an action:\n"
+                    "- The question is general knowledge (e.g. nutrition facts, cooking tips, health advice) with no reference to the user's personal data\n"
+                    "Always delegate to a specialist agent when the request involves the user's personal data or requires an action:\n"
+                    "- ask_document: ANY question about the user's documents, dietary restrictions, allergies, or goals from uploaded files\n"
                     "- ask_planner: meal planning, shopping list, favourites\n"
                     "- ask_nutrition: calorie tracking, macros, remaining budget, snack suggestions\n"
-                    "- ask_document: questions about the user's uploaded documents\n"
                     "When you delegate, pass the full user request to the chosen agent. Never call more than one agent per message."
                 ),
                 tools=[ask_planner, ask_nutrition, ask_document],

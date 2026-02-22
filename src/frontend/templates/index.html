@@ -501,6 +501,11 @@
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.3; transform: scale(0.8); }
         }
+
+        .stream-status {
+            color: #8b6f8f;
+            font-style: italic;
+        }
         
         .welcome-message {
             text-align: center;
@@ -987,7 +992,7 @@
             <div class="input-container">
                 <input type="file" id="fileInput" accept=".txt,.docx,.pdf" onchange="uploadFile()" multiple style="display: none;">
                 <div class="input-wrapper">
-                    <button class="upload-icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload text files">📎</button>
+                    <button class="upload-icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload data (.pdf, .docx, .txt)">📎</button>
                     <textarea 
                         id="userInput" 
                         placeholder="Ask MealBuddy anything..." 

@@ -71,6 +71,20 @@ function addMessage(content, isUser) {
     container.scrollTop = container.scrollHeight;
 }
 
+let _statusInterval = null;
+
+function showStatus(el, message) {
+    const base = message.replace(/\.+$/, '');
+    let dots = 0;
+    clearInterval(_statusInterval);
+    el.innerHTML = `<span class="stream-status">${base}</span>`;
+    const span = el.querySelector('.stream-status');
+    _statusInterval = setInterval(() => {
+        dots = (dots % 3) + 1;
+        span.textContent = base + '.'.repeat(dots);
+    }, 400);
+}
+
 async function sendMessage() {
     const input = document.getElementById('userInput');
     const query = input.value.trim();
@@ -92,13 +106,14 @@ async function sendMessage() {
     botDiv.innerHTML = `
         <div class="message-inner">
             <div class="message-avatar">🤖</div>
-            <div class="message-content">
-                <span class="stream-status" style="color:#8b6f8f; font-style:italic;">⏳ Thinking...</span>
+            <div class="message-content"></div>
             </div>
         </div>`;
     container.appendChild(botDiv);
     container.scrollTop = container.scrollHeight;
     const contentEl = botDiv.querySelector('.message-content');
+
+    showStatus(contentEl, '✨ Thinking...');
 
     let fullResponse = '';
     let toolCalls = [];
@@ -131,10 +146,10 @@ async function sendMessage() {
                 const data = JSON.parse(dataMatch[1]);
 
                 if (event === 'status') {
-                    contentEl.innerHTML = `<span class="stream-status" style="color:#8b6f8f; font-style:italic;">${data.message}</span>`;
+                    showStatus(contentEl, data.message);
                     container.scrollTop = container.scrollHeight;
                 } else if (event === 'token') {
-                    if (fullResponse === '') contentEl.innerHTML = ''; // clear status
+                    if (fullResponse === '') { clearInterval(_statusInterval); contentEl.innerHTML = ''; }
                     fullResponse += data.text;
                     contentEl.innerHTML = fullResponse.replace(/\n/g, '<br>');
                     container.scrollTop = container.scrollHeight;
