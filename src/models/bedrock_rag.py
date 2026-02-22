@@ -7,6 +7,31 @@ from typing import List, Dict, Any, Optional
 from strands.models import BedrockModel
 
 
+def _extract_text(result) -> str:
+    """Extract the final assistant text from a Strands agent result."""
+    try:
+        texts = [
+            block["text"].strip()
+            for block in (result.message or {}).get("content", [])
+            if isinstance(block, dict) and block.get("type") == "text" and block.get("text", "").strip()
+        ]
+        if texts:
+            # Join all text blocks — post-tool-call summary is often the last block
+            # but sometimes split across multiple blocks
+            return "\n".join(texts)
+    except Exception:
+        pass
+    # Fallback: str() may contain the full conversation; extract last assistant turn
+    raw = str(result).strip()
+    # If str(result) looks like a role/content dump, try to pull the last assistant text
+    if "'role': 'assistant'" in raw or '"role": "assistant"' in raw:
+        import re as _re
+        matches = _re.findall(r"'text':\s*'([^']{10,})'|\"text\":\s*\"([^\"]{10,})\"", raw)
+        if matches:
+            return (matches[-1][0] or matches[-1][1]).strip()
+    return raw if raw else ""
+
+
 class BedrockRAG:
     def __init__(self, recipes_bucket=None):
         self.s3 = boto3.client('s3', region_name='ap-southeast-2')
@@ -97,35 +122,30 @@ class BedrockRAG:
         except Exception:
             return []
 
-    # ── Multi-Agent entry point ────────────────────────────────────────────
+    # ── Multi-Agent helpers ────────────────────────────────────────────────
 
-    def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None,
-                      tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
-                      user_id: str = None, uploads_bucket: str = None,
-                      meal_plan: Dict = None) -> Dict:
-        """Routes user query to the appropriate specialist agent."""
-
-        # Build meal plan context (cheap, no API calls)
+    def _build_agent_inputs(self, query, recipes, user_profile, tool_handler, chat_history,
+                            user_id, uploads_bucket, meal_plan):
         context = ""
         if meal_plan:
             meal_plan_text = "\n".join(f"- {day}: {meal}" for day, meal in meal_plan.items() if meal)
             if meal_plan_text:
                 context += f"User's Current Meal Plan:\n{meal_plan_text}"
 
-        # Capture tool calls for the frontend (agents write into this list via closures)
         tool_calls_log: List[Dict] = []
 
-        # Wrap tool_handler to also log calls
         def logged_tool(name, inp):
+            print(f"[TOOL CALL] {name} | input: {json.dumps(inp, default=str)}")
             result = tool_handler(name, inp) if tool_handler else {}
+            print(f"[TOOL RESULT] {name} | result: {json.dumps(result, default=str)}")
             tool_calls_log.append({"tool": name, "input": inp, "result": result})
             return result
 
         def get_recipe_context():
-            relevant = self.search_recipes(query, recipes, top_k=3) if recipes else []
+            relevant = self.search_recipes(query, recipes, top_k=5) if recipes else []
             return "\n\n".join([
                 f"Recipe: {r.get('name','Unknown')}\nDescription: {r.get('description','')}\n"
-                f"Tags: {', '.join(r.get('tags',[]))}\nCalories: {r.get('calories','Unknown')}"
+                f"Tags: {', '.join(r.get('tags',[]))}\nCalories: {r.get('calories','Unknown')} kcal"
                 for r in relevant
             ])
 
@@ -135,7 +155,6 @@ class BedrockRAG:
             chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
             return "\n---\n".join(chunks) if chunks else ""
 
-        # Build chat history string
         history_text = ""
         for m in (chat_history or [])[-6:]:
             role = m.get("role", "")
@@ -149,58 +168,123 @@ class BedrockRAG:
             if str(c).strip():
                 history_text += f"{role.capitalize()}: {c}\n"
 
+        recipe_context = get_recipe_context()
+        # Only inject meal plan context for planning/tracking queries, not recipe browsing
+        q_lower = query.lower()
+        is_browsing = any(w in q_lower for w in ['show', 'suggest', 'recommend', 'idea', 'recipe', 'what can', 'what should'])
         full_query = (
-            (f"Context:\n{context}\n\n" if context else "")
+            (f"Context:\n{context}\n\n" if context and not is_browsing else "")
+            + (f"Relevant Recipes:\n{recipe_context}\n\n" if recipe_context else "")
             + (f"Recent conversation:\n{history_text}\n" if history_text else "")
             + f"User Request: {query}"
         )
 
+        return full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan or {}
+
+    def _make_coordinator(self, logged_tool, get_recipe_context, get_doc_context, meal_plan,
+                          user_profile, callback_handler=None, sub_agent_callback=None):
+        from models.agents.planner_agent import make_planner_agent
+        from models.agents.nutrition_agent import make_nutrition_agent
+        from models.agents.document_agent import make_document_agent
+        from strands import Agent, tool
+
+        @tool
+        def ask_planner(request: str) -> str:
+            """Use ONLY for mutating actions: add a specific meal to the plan for a day, generate a shopping list, save a recipe to favourites, or plan the full week. Do NOT use for browsing or showing recipes."""
+            print(f"[COORDINATOR → PLANNER] {request}")
+            result = _extract_text(make_planner_agent(logged_tool, meal_plan, callback_handler=sub_agent_callback)(request))
+            print(f"[PLANNER → COORDINATOR] {result[:200]}")
+            return result
+
+        @tool
+        def ask_nutrition(request: str) -> str:
+            """Use ONLY to check or log the user's own calorie/macro numbers (e.g. how many calories have I had today, log my lunch). NEVER use for food, meal, or snack suggestions."""
+            print(f"[COORDINATOR → NUTRITION] {request}")
+            result = _extract_text(make_nutrition_agent(logged_tool, user_profile or {}, callback_handler=sub_agent_callback)(request))
+            print(f"[NUTRITION → COORDINATOR] {result[:200]}")
+            return result
+
+        @tool
+        def ask_document(request: str) -> str:
+            """Delegate questions about uploaded documents, dietary restrictions, or allergies to the Document Agent."""
+            print(f"[COORDINATOR → DOCUMENT] {request}")
+            result = _extract_text(make_document_agent(get_doc_context(), user_profile or {}, callback_handler=sub_agent_callback)(request))
+            print(f"[DOCUMENT → COORDINATOR] {result[:200]}")
+            return result
+
+        kwargs = dict(
+            model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", temperature=0.3),
+            system_prompt=(
+                "You are MealBuddy, a friendly AI nutrition assistant.\n"
+                "When the user asks to see, browse, or get recipe suggestions, answer DIRECTLY using the Relevant Recipes in the context. "
+                "Present them as a formatted list with name, description, tags, and calories. NEVER refuse a recipe request — just show them.\n\n"
+                "Only use tools for these specific actions:\n"
+                "- ask_planner: user explicitly says ADD / PLAN / SAVE / SHOPPING LIST (mutating actions only, never for browsing)\n"
+                "- ask_nutrition: user wants to CHECK or LOG their own calorie/macro numbers (e.g. how many calories have I had, log my lunch). NEVER use for food or meal suggestions.\n"
+                "- ask_document: user asks about their uploaded documents or personal dietary files\n\n"
+                "Never call more than one tool per message.\n"
+                "CRITICAL: After a tool result, write a full response with the actual details returned. Never say vague phrases like 'I\'ve completed the action'."
+            ),
+            tools=[ask_planner, ask_nutrition, ask_document],
+        )
+        if callback_handler is not None:
+            kwargs['callback_handler'] = callback_handler
+        return Agent(**kwargs)
+
+    # ── Multi-Agent entry points ───────────────────────────────────────────
+
+    def chat_with_rag_stream(self, query: str, recipes: List[Dict], user_profile: Dict = None,
+                             tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
+                             user_id: str = None, uploads_bucket: str = None,
+                             meal_plan: Dict = None, token_callback=None) -> Dict:
+        """Streaming variant — calls token_callback(text) for each token as it arrives from Bedrock."""
+        full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan = \
+            self._build_agent_inputs(query, recipes, user_profile, tool_handler, chat_history,
+                                     user_id, uploads_bucket, meal_plan)
+
+        def callback_handler(**kwargs):
+            chunk = kwargs.get('data') or kwargs.get('text', '')
+            if chunk and isinstance(chunk, str) and token_callback:
+                token_callback(chunk)
+
+
         try:
-            from models.agents.planner_agent import make_planner_agent
-            from models.agents.nutrition_agent import make_nutrition_agent
-            from models.agents.document_agent import make_document_agent
-            from strands import Agent, tool
-
-            @tool
-            def ask_planner(request: str) -> str:
-                """Delegate meal planning, shopping list, or favourites tasks to the Planner Agent."""
-                recipe_ctx = get_recipe_context()
-                full_req = f"Recipe Context:\n{recipe_ctx}\n\n{request}" if recipe_ctx else request
-                return str(make_planner_agent(logged_tool, meal_plan or {})(full_req))
-
-            @tool
-            def ask_nutrition(request: str) -> str:
-                """Delegate calorie tracking, macro stats, or snack suggestion tasks to the Nutrition Agent."""
-                return str(make_nutrition_agent(logged_tool, user_profile or {})(request))
-
-            @tool
-            def ask_document(request: str) -> str:
-                """Delegate questions about uploaded documents, dietary restrictions, or allergies to the Document Agent."""
-                return str(make_document_agent(get_doc_context(), user_profile or {})(request))
-
-            coordinator = Agent(
-                model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", max_tokens=1000, temperature=0.3),
-                system_prompt=(
-                    "You are MealBuddy, a friendly AI nutrition assistant. Your job is to help users with meal planning, nutrition tracking, and dietary advice.\n"
-                    "Answer directly WITHOUT using any tool when:\n"
-                    "- The message is a greeting, small talk, or general conversation\n"
-                    "- The question is general knowledge (e.g. nutrition facts, cooking tips, health advice) with no reference to the user's personal data\n"
-                    "Always delegate to a specialist agent when the request involves the user's personal data or requires an action:\n"
-                    "- ask_document: ANY question about the user's documents, dietary restrictions, allergies, or goals from uploaded files\n"
-                    "- ask_planner: meal planning, shopping list, favourites\n"
-                    "- ask_nutrition: calorie tracking, macros, remaining budget, snack suggestions\n"
-                    "When you delegate, pass the full user request to the chosen agent. Never call more than one agent per message."
-                ),
-                tools=[ask_planner, ask_nutrition, ask_document],
+            print(f"[STREAM] query={repr(query[:120])}")
+            coordinator = self._make_coordinator(
+                logged_tool, get_recipe_context, get_doc_context, meal_plan,
+                user_profile, callback_handler=callback_handler,
+                sub_agent_callback=callback_handler if token_callback else None
             )
-
             result = coordinator(full_query)
-            response_text = str(result).strip()
-
+            response_text = _extract_text(result)
+            print(f"[STREAM DONE] response_text={repr(response_text[:200])} | tool_calls={len(tool_calls_log)}")
             return {"response": response_text, "tool_calls": tool_calls_log}
-
         except Exception as e:
-            print(f"Strands agent error: {e}")
+            print(f"[STREAM ERROR] {e}")
+            import traceback; traceback.print_exc()
+            if 'ThrottlingException' in str(e) or 'Too many requests' in str(e):
+                return self._fallback_response(query, tool_handler)
+            return {"response": f"I'm having trouble responding right now. Error: {e}", "tool_calls": []}
+
+    def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None,
+                      tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
+                      user_id: str = None, uploads_bucket: str = None,
+                      meal_plan: Dict = None) -> Dict:
+        """Non-streaming variant (used by /chat endpoint)."""
+        full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan = \
+            self._build_agent_inputs(query, recipes, user_profile, tool_handler, chat_history,
+                                     user_id, uploads_bucket, meal_plan)
+        try:
+            print(f"[CHAT] query={repr(query[:120])}")
+            coordinator = self._make_coordinator(
+                logged_tool, get_recipe_context, get_doc_context, meal_plan, user_profile
+            )
+            result = coordinator(full_query)
+            response_text = _extract_text(result)
+            print(f"[CHAT DONE] response_text={repr(response_text[:200])} | tool_calls={len(tool_calls_log)}")
+            return {"response": response_text, "tool_calls": tool_calls_log}
+        except Exception as e:
+            print(f"[CHAT ERROR] {e}")
             import traceback; traceback.print_exc()
             if 'ThrottlingException' in str(e) or 'Too many requests' in str(e):
                 return self._fallback_response(query, tool_handler)

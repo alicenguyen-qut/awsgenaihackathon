@@ -906,22 +906,64 @@ def chat_stream():
             if is_planning:
                 yield sse('status', {'message': '📅 Building your weekly meal plan...'})
 
-            result = bedrock_rag.chat_with_rag(
-                query, recipes, user_profile, tool_handler,
-                current_chat.get('messages', []) if current_chat else [],
-                user_id=user_id, uploads_bucket=S3_BUCKET,
-                meal_plan=user_data.get('meal_plan', {})
-            )
-            response_text = result.get('response', '')
-            tool_calls = result.get('tool_calls', [])
+            import queue, threading
+            token_queue = queue.Queue()
+            SENTINEL = object()
 
-            if is_planning and tool_calls:
-                yield sse('status', {'message': '✅ Meal plan ready! Streaming your summary...'})
+            def on_token(chunk):
+                token_queue.put(chunk)
 
-            # Stream response word by word
-            words = response_text.split(' ')
-            for word in words:
-                yield sse('token', {'text': word + ' '})
+            def run_agent():
+                try:
+                    r = bedrock_rag.chat_with_rag_stream(
+                        query, recipes, user_profile, tool_handler,
+                        current_chat.get('messages', []) if current_chat else [],
+                        user_id=user_id, uploads_bucket=S3_BUCKET,
+                        meal_plan=user_data.get('meal_plan', {}),
+                        token_callback=on_token
+                    )
+                    token_queue.put(('__result__', r))
+                except Exception as exc:
+                    token_queue.put(('__error__', exc))
+                finally:
+                    token_queue.put(SENTINEL)
+
+            thread = threading.Thread(target=run_agent, daemon=True)
+            thread.start()
+
+            result = None
+            full_streamed = ''
+            while True:
+                item = token_queue.get()
+                if item is SENTINEL:
+                    break
+                if isinstance(item, tuple) and item[0] == '__result__':
+                    result = item[1]
+                elif isinstance(item, tuple) and item[0] == '__error__':
+                    raise item[1]
+                else:
+                    full_streamed += item
+                    yield sse('token', {'text': item})
+
+            thread.join()
+            # full_streamed contains all coordinator tokens (the actual visible response).
+            # result.response may be empty when the final text was fully streamed.
+            response_text = full_streamed or (result or {}).get('response', '')
+            tool_calls = (result or {}).get('tool_calls', [])
+
+            if not response_text and tool_calls:
+                lines = []
+                for tc in tool_calls:
+                    msg = (tc.get('result') or {}).get('message', '')
+                    if msg:
+                        lines.append(f"- {msg}")
+                response_text = "Here's what I did for you:\n" + "\n".join(lines) if lines else "Done! Check your planner or shopping list for the updates."
+                for word in response_text.split(' '):
+                    if word:
+                        yield sse('token', {'text': word + ' '})
+            elif not response_text:
+                response_text = "I'm not sure how to respond to that. Could you rephrase?"
+                yield sse('token', {'text': response_text})
 
             if current_chat:
                 current_chat['messages'].append({'role': 'user', 'content': query, 'timestamp': now_aest().isoformat()})

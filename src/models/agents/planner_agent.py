@@ -6,7 +6,7 @@ MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 REGION = "ap-southeast-2"
 
 
-def make_planner_agent(tool_handler, meal_plan: dict):
+def make_planner_agent(tool_handler, meal_plan: dict, callback_handler=None):
     @tool
     def search_recipes(query: str, top_k: int = 5) -> str:
         """Search for recipes matching a query. Use this before planning meals."""
@@ -29,8 +29,8 @@ def make_planner_agent(tool_handler, meal_plan: dict):
 
     meal_plan_text = "\n".join(f"- {d}: {m}" for d, m in meal_plan.items() if m) or "None yet"
 
-    return Agent(
-        model=BedrockModel(model_id=MODEL_ID, region_name=REGION, max_tokens=2000, temperature=0.7),
+    kwargs = dict(
+        model=BedrockModel(model_id=MODEL_ID, region_name=REGION, temperature=0.7),
         system_prompt=(
             "You are the MealBuddy Planner. You handle meal planning, shopping lists, and favourites.\n"
             "When planning a week, first call search_recipes to find suitable meals, then call add_to_meal_plan exactly 7 times — Monday through Sunday.\n"
@@ -40,3 +40,6 @@ def make_planner_agent(tool_handler, meal_plan: dict):
         ),
         tools=[search_recipes, add_to_meal_plan, add_to_shopping_list, add_to_favorites],
     )
+    if callback_handler is not None:
+        kwargs['callback_handler'] = callback_handler
+    return Agent(**kwargs)

@@ -1,5 +1,29 @@
 // Chat functionality - list, messages, send/receive
 
+// Simple markdown renderer: bold, italic, headers, bullet/numbered lists, inline code
+function renderMarkdown(text) {
+    let html = text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/^### (.+)$/gm, '<h4 style="margin:10px 0 4px;color:#2d3748;font-size:15px;">$1</h4>')
+        .replace(/^## (.+)$/gm, '<h3 style="margin:12px 0 6px;color:#2d3748;font-size:16px;">$1</h3>')
+        .replace(/^# (.+)$/gm, '<h2 style="margin:14px 0 8px;color:#2d3748;font-size:18px;">$1</h2>')
+        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code style="background:#f0f0f0;padding:2px 5px;border-radius:4px;font-size:13px;">$1</code>');
+    // Bullet lists
+    html = html.replace(/((?:^[•\-\*] .+(?:\n|$))+)/gm, (block) => {
+        const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[•\-\*] /, '')}</li>`).join('');
+        return `<ul style="margin:6px 0 6px 18px;">${items}</ul>`;
+    });
+    // Numbered lists
+    html = html.replace(/((?:^\d+\. .+(?:\n|$))+)/gm, (block) => {
+        const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+        return `<ol style="margin:6px 0 6px 18px;">${items}</ol>`;
+    });
+    return html.replace(/\n/g, '<br>');
+}
+
 // Chat list management
 async function createNewChat() {
     const response = await fetch('/api/chat/new', { method: 'POST' });
@@ -64,7 +88,7 @@ function addMessage(content, isUser) {
     div.innerHTML = `
         <div class="message-inner">
             <div class="message-avatar">${avatar}</div>
-            <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
+            <div class="message-content">${isUser ? content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') : renderMarkdown(content)}</div>
         </div>
     `;
     container.appendChild(div);
@@ -151,7 +175,7 @@ async function sendMessage() {
                 } else if (event === 'token') {
                     if (fullResponse === '') { clearInterval(_statusInterval); contentEl.innerHTML = ''; }
                     fullResponse += data.text;
-                    contentEl.innerHTML = fullResponse.replace(/\n/g, '<br>');
+                    contentEl.innerHTML = renderMarkdown(fullResponse);
                     container.scrollTop = container.scrollHeight;
                 } else if (event === 'done') {
                     toolCalls = data.tool_calls || [];

@@ -40,7 +40,7 @@ function showConfirm(message, onConfirm) {
     `;
     
     document.body.appendChild(modal);
-    document.getElementById('confirmBtn').onclick = () => {
+    modal.querySelector('#confirmBtn').onclick = () => {
         modal.remove();
         onConfirm();
     };

@@ -6,7 +6,7 @@ MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 REGION = "ap-southeast-2"
 
 
-def make_nutrition_agent(tool_handler, user_profile: dict):
+def make_nutrition_agent(tool_handler, user_profile: dict, callback_handler=None):
     allergies = ", ".join(user_profile.get("allergies", [])) or "none"
     dietary = ", ".join(user_profile.get("dietary", [])) or "none"
     health_goal = user_profile.get("healthGoal", "maintain weight")
@@ -25,10 +25,10 @@ def make_nutrition_agent(tool_handler, user_profile: dict):
             "protein": protein, "carbs": carbs, "fats": fats
         }))
 
-    return Agent(
-        model=BedrockModel(model_id=MODEL_ID, region_name=REGION, max_tokens=1000, temperature=0.5),
+    kwargs = dict(
+        model=BedrockModel(model_id=MODEL_ID, region_name=REGION, temperature=0.5),
         system_prompt=(
-            "You are the MealBuddy Nutrition Tracker. You handle calorie/macro tracking and snack suggestions.\n"
+            "You are the MealBuddy Nutrition Tracker. You handle calorie/macro tracking only.\n"
             "Always call get_nutrition_stats before answering any calorie or remaining-budget question.\n"
             "Give precise answers using the returned calorie_goal and calories_remaining fields, e.g. 'You have X cal remaining (goal: Y, consumed: Z)'.\n"
             f"User profile — health goal: {health_goal}, dietary: {dietary}, allergies: {allergies}.\n"
@@ -36,3 +36,6 @@ def make_nutrition_agent(tool_handler, user_profile: dict):
         ),
         tools=[get_nutrition_stats, log_nutrition],
     )
+    if callback_handler is not None:
+        kwargs['callback_handler'] = callback_handler
+    return Agent(**kwargs)

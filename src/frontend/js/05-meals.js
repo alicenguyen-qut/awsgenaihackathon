@@ -261,7 +261,7 @@ async function saveMealPlan() {
         });
         const data = await response.json();
         if (data.success) {
-            alert('Meal plan saved!');
+            showAlert('Meal plan saved! 📅', 'success');
         }
     } catch (error) {
         console.error('Save meal plan error:', error);
