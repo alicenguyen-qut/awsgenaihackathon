@@ -86,9 +86,9 @@ function closeFileModal() {
 
 async function deleteFile(fileId) {
     const modal = document.getElementById('deleteConfirmModal');
-    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
     document.getElementById('deleteConfirmBtn').onclick = async () => {
-        modal.classList.add('hidden');
+        modal.style.display = 'none';
         await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
         await loadFiles();
     };

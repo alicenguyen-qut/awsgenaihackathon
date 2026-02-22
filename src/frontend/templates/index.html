@@ -842,13 +842,13 @@
     </style>
 </head>
 <body>
-    <div class="modal hidden" id="deleteConfirmModal" style="z-index:4000">
+    <div class="modal" id="deleteConfirmModal" style="z-index:4000; display:none">
         <div class="modal-content" style="max-width:380px; text-align:center;">
             <div style="font-size:36px; margin-bottom:12px;">🗑️</div>
             <h3 style="margin-bottom:8px;">Delete file?</h3>
             <p style="color:#718096; font-size:14px; margin-bottom:24px;">This action cannot be undone.</p>
             <button id="deleteConfirmBtn" style="background:linear-gradient(135deg,#fc8181,#f56565);">Delete</button>
-            <button onclick="document.getElementById('deleteConfirmModal').classList.add('hidden')" style="background:#e2e8f0; color:#4a5568;">Cancel</button>
+            <button onclick="document.getElementById('deleteConfirmModal').style.display='none'" style="background:#e2e8f0; color:#4a5568;">Cancel</button>
         </div>
     </div>
 
@@ -914,7 +914,7 @@
             </div>
             <input type="text" id="allergies" placeholder="Allergies (e.g. shellfish, soy, eggs)" style="margin-bottom: 20px;">
 
-            <button onclick="saveNutritionProfile()">Save &amp; Get Started 🚀</button>
+            <button onclick="saveNutritionProfile()">Save &amp; Start Eating Smarter 🚀</button>
             <button onclick="document.getElementById('nutritionSetupModal').classList.add('hidden')" style="background: transparent; color: #a0aec0; box-shadow: none; margin-top: 8px; font-size: 14px;">Skip for now</button>
         </div>
     </div>

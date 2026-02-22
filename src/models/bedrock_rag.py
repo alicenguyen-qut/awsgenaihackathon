@@ -180,13 +180,18 @@ class BedrockRAG:
                 return str(document(request))
 
             coordinator = Agent(
-                model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", max_tokens=300, temperature=0.3),
+                model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", max_tokens=1000, temperature=0.3),
                 system_prompt=(
-                    "You are the MealBuddy Coordinator. Route each user request to exactly one specialist agent:\n"
+                    "You are MealBuddy, a friendly AI nutrition assistant. Your job is to help users with meal planning, nutrition tracking, and dietary advice.\n"
+                    "Answer directly WITHOUT using any tool when:\n"
+                    "- The message is a greeting, small talk, or general conversation\n"
+                    "- The question is general knowledge (e.g. nutrition facts, cooking tips, health advice)\n"
+                    "- You already have enough context to answer confidently\n"
+                    "Only delegate to a specialist agent when the request requires real-time data or an action:\n"
                     "- ask_planner: meal planning, shopping list, favourites\n"
                     "- ask_nutrition: calorie tracking, macros, remaining budget, snack suggestions\n"
-                    "- ask_document: questions about uploaded PDFs, dietary restrictions, allergies\n"
-                    "Pass the full user request to the chosen agent and return its response verbatim."
+                    "- ask_document: questions about the user's uploaded documents\n"
+                    "When you delegate, pass the full user request to the chosen agent. Never call more than one agent per message."
                 ),
                 tools=[ask_planner, ask_nutrition, ask_document],
             )
