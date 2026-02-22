@@ -113,13 +113,17 @@ class BedrockRAG:
 
     def search_user_uploads(self, query: str, user_id: str, bucket: str, top_k: int = 3) -> List[str]:
         try:
-            embeddings = json.loads(self.s3.get_object(Bucket=bucket, Key=f'uploads/{user_id}_embeddings.json')['Body'].read())
+            key = f'uploads/{user_id}_embeddings.json'
+            print(f"[SEARCH UPLOADS] bucket={bucket}, key={key}")
+            embeddings = json.loads(self.s3.get_object(Bucket=bucket, Key=key)['Body'].read())
+            print(f"[SEARCH UPLOADS] found {len(embeddings)} embedding chunks")
             if not embeddings:
                 return []
             q_emb = self.get_embedding(query)
             scored = sorted([(self.cosine_similarity(q_emb, e['embedding']), e['text']) for e in embeddings], reverse=True)
             return [t for _, t in scored[:top_k]]
-        except Exception:
+        except Exception as e:
+            print(f"[SEARCH UPLOADS] error: {e}")
             return []
 
     # ── Multi-Agent helpers ────────────────────────────────────────────────
@@ -153,12 +157,27 @@ class BedrockRAG:
             # Try S3 semantic search first
             if user_id and uploads_bucket:
                 chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
+                print(f"[DOC CONTEXT] S3 chunks found: {len(chunks)}, user_id={user_id}, bucket={uploads_bucket}")
                 if chunks:
                     return "\n---\n".join(chunks)
-            # Fallback: use locally stored file content
-            if uploaded_files:
-                combined = "\n---\n".join(f['content'] for f in uploaded_files if f.get('content'))
-                return combined[:4000] if combined else ""
+                # Fallback: read raw text files stored in S3 on upload
+                try:
+                    listed = self.s3.list_objects_v2(Bucket=uploads_bucket, Prefix=f'uploads/{user_id}_')
+                    texts = []
+                    for obj in listed.get('Contents', []):
+                        if obj['Key'].endswith('.txt'):
+                            body = self.s3.get_object(Bucket=uploads_bucket, Key=obj['Key'])['Body'].read().decode('utf-8')
+                            texts.append(body[:2000])
+                    if texts:
+                        print(f"[DOC CONTEXT] S3 raw text fallback: {len(texts)} files")
+                        return "\n---\n".join(texts)[:4000]
+                except Exception as e:
+                    print(f"[DOC CONTEXT] S3 raw text fallback error: {e}")
+            # Last resort: use content stored in session
+            files_with_content = [f for f in (uploaded_files or []) if f.get('content')]
+            print(f"[DOC CONTEXT] Session fallback files: {len(files_with_content)}")
+            if files_with_content:
+                return "\n---\n".join(f['content'] for f in files_with_content)[:4000]
             return ""
 
         history_text = ""

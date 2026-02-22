@@ -360,6 +360,9 @@ def upload_file():
         # Embed and store to S3 for RAG
         if USE_AWS and bedrock_rag and S3_BUCKET and content:
             bedrock_rag.embed_and_store_file(content, user_id, file_info['id'], S3_BUCKET)
+            # Also store raw text to S3 so it's always retrievable
+            s3_client.put_object(Bucket=S3_BUCKET, Key=f'uploads/{user_id}_{file_info["id"]}.txt',
+                                 Body=content.encode('utf-8'), ContentType='text/plain')
 
         MOCK_RECIPES.append({
             "name": filename,
@@ -410,7 +413,11 @@ def delete_file(file_id):
         storage.save_user_data(user_id, user_data)
         # Remove embeddings for this file from S3
         if USE_AWS and bedrock_rag and S3_BUCKET:
-            bedrock_rag.embed_and_store_file('', user_id, file_id, S3_BUCKET)  # empty text = just removes old chunks
+            bedrock_rag.embed_and_store_file('', user_id, file_id, S3_BUCKET)
+            try:
+                s3_client.delete_object(Bucket=S3_BUCKET, Key=f'uploads/{user_id}_{file_id}.txt')
+            except Exception:
+                pass
         return jsonify({'success': True})
     return jsonify({'error': 'File not found'}), 404
 
