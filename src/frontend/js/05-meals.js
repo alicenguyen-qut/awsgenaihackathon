@@ -94,22 +94,29 @@ async function saveFavoriteWithContent(recipeId, recipeName, content) {
 }
 
 function viewFavoriteRecipe(recipeId, recipeName, content) {
+    const favModal = document.getElementById('favoritesModal');
+    favModal.classList.add('hidden');
+
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2000;';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    
+
+    const closeModal = () => { modal.remove(); favModal.classList.remove('hidden'); };
+    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
     modal.innerHTML = `
         <div style="background: white; padding: 32px; border-radius: 24px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.4);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid rgba(250, 177, 160, 0.2);">
                 <h2 style="font-size: 24px; font-weight: 700; color: #2d3748;">${recipeName}</h2>
-                <button onclick="this.closest('div').parentElement.remove()" style="background: #fab1a0; color: white; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px;">×</button>
+                <button id="closeFavRecipeBtn" style="background: #fab1a0; color: white; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px;">×</button>
             </div>
             <div style="white-space: pre-wrap; font-size: 15px; color: #2d3748; line-height: 1.8;">${content || 'Recipe content not available. Try re-adding this recipe.'}</div>
-            <button onclick="this.closest('div').parentElement.remove()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%); color: #8b6f8f; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px;">Close</button>
+            <button id="closeFavRecipeBtn2" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ffc9ba 0%, #ffb3a7 100%); color: #8b6f8f; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px;">Close</button>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
+    modal.querySelector('#closeFavRecipeBtn').onclick = closeModal;
+    modal.querySelector('#closeFavRecipeBtn2').onclick = closeModal;
 }
 
 // Meal Planner

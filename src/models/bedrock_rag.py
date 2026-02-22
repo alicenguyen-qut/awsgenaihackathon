@@ -183,8 +183,7 @@ class BedrockRAG:
         full_query = (
             (f"Context:\n{context}\n\n" if context else "")
             + (f"Relevant Recipes:\n{recipe_context}\n\n" if recipe_context else "")
-            + (f"Last assistant response (most recently discussed recipe/meal):\n{last_assistant}\n\n" if last_assistant else "")
-            + (f"Recent conversation:\n{history_text}\n" if history_text else "")
+            + (f"Previously discussed:\n{last_assistant}\n\n" if last_assistant else "")
             + f"User Request: {query}"
         )
 
@@ -199,7 +198,7 @@ class BedrockRAG:
 
         @tool
         def ask_planner(request: str) -> str:
-            """Use ONLY for mutating actions: add a specific meal to the plan for a day, generate a shopping list, save a recipe to favourites, or plan the full week. Do NOT use for browsing or showing recipes."""
+            """Use ONLY when the user explicitly asks to: add a meal to their plan, plan their week, add to favourites/favorites, or create a shopping list. NEVER call for meal ideas, recipe requests, or suggestions."""
             print(f"[COORDINATOR → PLANNER] {request}")
             # Inject last assistant response so planner has full recipe/ingredient details
             enriched = request
@@ -211,7 +210,7 @@ class BedrockRAG:
 
         @tool
         def ask_nutrition(request: str) -> str:
-            """Use ONLY to check or log the user's own calorie/macro numbers (e.g. how many calories have I had today, log my lunch). NEVER use for food, meal, or snack suggestions."""
+            """Use ONLY when the user explicitly asks to log a meal/calories or check their calorie/macro totals (e.g. 'log my lunch', 'how many calories have I had'). NEVER call for food suggestions, recipe ideas, or nutrition facts."""
             print(f"[COORDINATOR → NUTRITION] {request}")
             result = _extract_text(make_nutrition_agent(logged_tool, user_profile or {}, callback_handler=sub_agent_callback)(request))
             print(f"[NUTRITION → COORDINATOR] {result[:200]}")
@@ -237,10 +236,11 @@ class BedrockRAG:
                 "For filters like 'quick', 'under 15 minutes', 'high protein': suggest 2-3 options immediately. "
                 "If the provided recipes don't perfectly match, use your general knowledge to suggest suitable meals that fit the criteria.\n"
                 "Start your answer directly with the suggestions. NEVER say 'let me search', 'let me try', 'the results don\'t contain', or narrate any process.\n\n"
-                "## Tools — ONLY for explicit user actions\n"
-                "- ask_planner: ONLY when user explicitly says ADD TO PLAN, PLAN MY WEEK, SAVE TO FAVOURITES, or SHOPPING LIST. Never for showing/suggesting recipes.\n"
-                "- ask_nutrition: user asks to CHECK or LOG their own calories/macros. Never for food suggestions.\n"
-                "- ask_document: user asks about their uploaded documents.\n\n"
+                "## Tools — ONLY when the user explicitly requests one of these exact actions\n"
+                "- ask_planner: 'add to my plan', 'plan my week', 'add to favourites/favorites', 'shopping list'. NEVER for meal ideas, recipe requests, or suggestions.\n"
+                "- ask_nutrition: 'log my meal', 'log my calories', 'how many calories have I had today'. NEVER for food suggestions, recipe questions, or nutrition facts.\n"
+                "- ask_document: user explicitly asks about their uploaded documents or files.\n\n"
+                "If in doubt, answer directly without tools.\n"
                 "Never call more than one tool per message.\n"
                 "CRITICAL: After a tool result, write a full response with actual details. Never say vague phrases like 'I\'ve completed the action'."
             ),
