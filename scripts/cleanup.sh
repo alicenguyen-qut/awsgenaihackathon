@@ -9,9 +9,9 @@ echo ""
 
 # Configuration
 REGION="ap-southeast-2"
-STACK_NAME="cooking-assistant-stack"
+STACK_NAME="mealbuddy-stack"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-BUCKET_NAME="cooking-assistant-data-${ACCOUNT_ID}"
+BUCKET_NAME="mealbuddy-data-${ACCOUNT_ID}"
 
 echo "Checking existing resources..."
 

@@ -59,5 +59,4 @@ uploads/
 .cache/
 *.lock
 .env
-data/
 local/
