@@ -198,7 +198,7 @@ Infrastructure:
 
 ## 4. Live Link
 
-🌐 **[mealbuddy.ap-southeast-2.elasticbeanstalk.com](http://mealbuddy.ap-southeast-2.elasticbeanstalk.com)**
+🌐 **[Application Link](http://mealbuddy.eba-wgpw3rds.ap-southeast-2.elasticbeanstalk.com/)**
 
 ---
 
