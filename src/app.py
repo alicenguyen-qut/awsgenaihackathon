@@ -977,6 +977,28 @@ def chat_stream():
 
             yield sse('done', {'tool_calls': tool_calls})
 
+            # Generate follow-up suggestions
+            try:
+                suggestions_prompt = (
+                    f"Given this nutrition assistant response: {response_text[:300]}\n"
+                    "Generate exactly 3 short follow-up prompts the user might want to ask next. "
+                    "Return ONLY a JSON array of 3 strings, no other text. Example: [\"Add to meal plan\", \"Get shopping list\", \"Show similar recipes\"]"
+                )
+                import boto3 as _boto3, json as _json2
+                br = _boto3.client('bedrock-runtime', region_name='ap-southeast-2')
+                sg_resp = br.invoke_model(
+                    modelId='anthropic.claude-3-haiku-20240307-v1:0',
+                    body=_json2.dumps({"anthropic_version": "bedrock-2023-05-31", "max_tokens": 100,
+                                       "messages": [{"role": "user", "content": suggestions_prompt}]}),
+                    contentType='application/json', accept='application/json'
+                )
+                sg_text = _json2.loads(sg_resp['body'].read())['content'][0]['text'].strip()
+                suggestions = _json2.loads(sg_text)
+                if isinstance(suggestions, list):
+                    yield sse('suggestions', {'items': suggestions[:3]})
+            except Exception:
+                pass
+
         except Exception as e:
             print(f"Stream error: {e}")
             import traceback; traceback.print_exc()

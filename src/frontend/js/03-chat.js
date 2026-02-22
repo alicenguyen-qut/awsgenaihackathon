@@ -174,20 +174,28 @@ async function sendMessage() {
                     container.scrollTop = container.scrollHeight;
                 } else if (event === 'tool_action') {
                     clearInterval(_statusInterval);
-                    const s = contentEl.querySelector('.stream-status');
-                    if (s) s.remove();
-                    const label = data.tool.replace(/_/g, ' ');
-                    const pill = document.createElement('div');
-                    pill.style.cssText = 'font-size:11px;color:#666;background:rgba(116,185,255,0.15);border:1px solid rgba(116,185,255,0.4);border-radius:12px;padding:2px 10px;margin:4px 0;display:inline-block;';
-                    pill.textContent = `⚙️ ${label}`;
-                    contentEl.appendChild(pill);
-                    contentEl.appendChild(document.createElement('br'));
+                    contentEl.querySelectorAll('.tool-status').forEach(e => e.remove());
+                    const friendlyLabels = {
+                        'search_recipes': '🔍 Searching recipes',
+                        'add_to_meal_plan': '📅 Updating meal plan',
+                        'add_to_shopping_list': '🛒 Updating shopping list',
+                        'add_to_favorites': '⭐ Saving to favourites',
+                        'log_nutrition': '📊 Logging nutrition',
+                        'get_nutrition_stats': '📈 Checking nutrition stats'
+                    };
+                    const base = friendlyLabels[data.tool] || `⚙️ ${data.tool.replace(/_/g, ' ')}`;
+                    const statusEl = document.createElement('div');
+                    statusEl.className = 'tool-status';
+                    statusEl.style.cssText = 'font-size:12px;color:#888;margin:4px 0;';
+                    statusEl.textContent = base + '...';
+                    contentEl.appendChild(statusEl);
+                    let dots = 0;
+                    _statusInterval = setInterval(() => { dots = (dots % 3) + 1; statusEl.textContent = base + '.'.repeat(dots); }, 400);
                     container.scrollTop = container.scrollHeight;
                 } else if (event === 'token') {
                     if (fullResponse === '') {
                         clearInterval(_statusInterval);
-                        const s = contentEl.querySelector('.stream-status');
-                        if (s) s.remove();
+                        contentEl.querySelectorAll('.stream-status, .tool-status').forEach(e => e.remove());
                     }
                     fullResponse += data.text;
                     // preserve tool pills, update only the text node after them
@@ -201,9 +209,16 @@ async function sendMessage() {
                     container.scrollTop = container.scrollHeight;
                 } else if (event === 'done') {
                     clearInterval(_statusInterval);
-                    const s = contentEl.querySelector('.stream-status');
-                    if (s) s.remove();
+                    contentEl.querySelectorAll('.stream-status, .tool-status').forEach(e => e.remove());
                     toolCalls = data.tool_calls || [];
+                } else if (event === 'suggestions') {
+                    const chips = document.createElement('div');
+                    chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;';
+                    chips.innerHTML = data.items.map(s =>
+                        `<button onclick="document.getElementById('userInput').value=this.dataset.q;sendMessage()" data-q="${s.replace(/"/g,'&quot;')}" style="background:#f0f4ff;border:1px solid #c3d0f5;border-radius:16px;padding:6px 12px;font-size:13px;cursor:pointer;color:#3d5a99;">${s}</button>`
+                    ).join('');
+                    contentEl.appendChild(chips);
+                    container.scrollTop = container.scrollHeight;
                 } else if (event === 'error') {
                     contentEl.innerHTML = `<span style="color:red;">Error: ${data.message}</span>`;
                 }

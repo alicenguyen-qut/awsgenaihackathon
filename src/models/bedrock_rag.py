@@ -169,17 +169,29 @@ class BedrockRAG:
                 history_text += f"{role.capitalize()}: {c}\n"
 
         recipe_context = get_recipe_context()
+        # For shopping list / action queries, surface the last assistant recipe response so the
+        # planner uses the most recently discussed recipe rather than a fresh semantic search.
+        last_assistant = ""
+        for m in reversed(chat_history or []):
+            if m.get("role") == "assistant":
+                c = m.get("content", "")
+                if isinstance(c, list):
+                    c = " ".join(b.get("text", "") for b in c if isinstance(b, dict))
+                last_assistant = str(c).strip()
+                break
+
         full_query = (
             (f"Context:\n{context}\n\n" if context else "")
             + (f"Relevant Recipes:\n{recipe_context}\n\n" if recipe_context else "")
+            + (f"Last assistant response (most recently discussed recipe/meal):\n{last_assistant}\n\n" if last_assistant else "")
             + (f"Recent conversation:\n{history_text}\n" if history_text else "")
             + f"User Request: {query}"
         )
 
-        return full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan or {}
+        return full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan or {}, last_assistant
 
     def _make_coordinator(self, logged_tool, get_recipe_context, get_doc_context, meal_plan,
-                          user_profile, callback_handler=None, sub_agent_callback=None):
+                          user_profile, last_assistant="", callback_handler=None, sub_agent_callback=None):
         from models.agents.planner_agent import make_planner_agent
         from models.agents.nutrition_agent import make_nutrition_agent
         from models.agents.document_agent import make_document_agent
@@ -189,7 +201,11 @@ class BedrockRAG:
         def ask_planner(request: str) -> str:
             """Use ONLY for mutating actions: add a specific meal to the plan for a day, generate a shopping list, save a recipe to favourites, or plan the full week. Do NOT use for browsing or showing recipes."""
             print(f"[COORDINATOR → PLANNER] {request}")
-            result = _extract_text(make_planner_agent(logged_tool, meal_plan, callback_handler=sub_agent_callback)(request))
+            # Inject last assistant response so planner has full recipe/ingredient details
+            enriched = request
+            if last_assistant:
+                enriched = f"Most recently discussed recipe/meal details:\n{last_assistant}\n\nRequest: {request}"
+            result = _extract_text(make_planner_agent(logged_tool, meal_plan, callback_handler=sub_agent_callback)(enriched))
             print(f"[PLANNER → COORDINATOR] {result[:200]}")
             return result
 
@@ -212,16 +228,21 @@ class BedrockRAG:
         kwargs = dict(
             model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", temperature=0.3),
             system_prompt=(
-                "You are MealBuddy, a friendly AI nutrition assistant.\n"
-                "When the user asks to see, browse, or get recipe suggestions, answer DIRECTLY using the Relevant Recipes in the context. "
-                "Present them as a formatted list with name, description, tags, and calories. NEVER refuse a recipe request — just show them.\n\n"
-                "If the user asks for ideas, suggestions, recipes, or inspiration — answer directly from Relevant Recipes. Do NOT call any tool.\n"
-                "Only use tools for these specific actions:\n"
-                "- ask_planner: user explicitly uses words like ADD, PLAN, SAVE, or SHOPPING LIST (e.g. 'add this to my plan', 'save to favourites', 'generate shopping list'). NEVER use for browsing, ideas, or suggestions.\n"
-                "- ask_nutrition: user explicitly asks to CHECK or LOG calories/macros (e.g. 'how many calories have I had', 'log my lunch'). NEVER use for food or meal suggestions.\n"
-                "- ask_document: user asks about their uploaded documents or personal dietary files\n\n"
+                "You are MealBuddy, a friendly AI nutrition assistant.\n\n"
+                "## Recipe & food questions — ALWAYS answer directly, NO tools needed\n"
+                "Recipe context is already provided above. Use it as inspiration, then answer from your general nutrition knowledge.\n"
+                "This includes: showing a recipe, listing ingredients, giving cooking instructions, suggesting meals, or any food/nutrition question.\n"
+                "When the user asks for a recipe (e.g. 'give me the recipe', 'show me the recipe', 'how do I make it'), "
+                "respond with the full recipe details — name, ingredients, and steps — using the recipe context provided above.\n"
+                "For filters like 'quick', 'under 15 minutes', 'high protein': suggest 2-3 options immediately. "
+                "If the provided recipes don't perfectly match, use your general knowledge to suggest suitable meals that fit the criteria.\n"
+                "Start your answer directly with the suggestions. NEVER say 'let me search', 'let me try', 'the results don\'t contain', or narrate any process.\n\n"
+                "## Tools — ONLY for explicit user actions\n"
+                "- ask_planner: ONLY when user explicitly says ADD TO PLAN, PLAN MY WEEK, SAVE TO FAVOURITES, or SHOPPING LIST. Never for showing/suggesting recipes.\n"
+                "- ask_nutrition: user asks to CHECK or LOG their own calories/macros. Never for food suggestions.\n"
+                "- ask_document: user asks about their uploaded documents.\n\n"
                 "Never call more than one tool per message.\n"
-                "CRITICAL: After a tool result, write a full response with the actual details returned. Never say vague phrases like 'I\'ve completed the action'."
+                "CRITICAL: After a tool result, write a full response with actual details. Never say vague phrases like 'I\'ve completed the action'."
             ),
             tools=[ask_planner, ask_nutrition, ask_document],
         )
@@ -236,7 +257,7 @@ class BedrockRAG:
                              user_id: str = None, uploads_bucket: str = None,
                              meal_plan: Dict = None, token_callback=None) -> Dict:
         """Streaming variant — calls token_callback(text) for each token as it arrives from Bedrock."""
-        full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan = \
+        full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan, last_assistant = \
             self._build_agent_inputs(query, recipes, user_profile, tool_handler, chat_history,
                                      user_id, uploads_bucket, meal_plan)
 
@@ -250,7 +271,7 @@ class BedrockRAG:
             print(f"[STREAM] query={repr(query[:120])}")
             coordinator = self._make_coordinator(
                 logged_tool, get_recipe_context, get_doc_context, meal_plan,
-                user_profile, callback_handler=callback_handler,
+                user_profile, last_assistant=last_assistant, callback_handler=callback_handler,
                 sub_agent_callback=callback_handler if token_callback else None
             )
             result = coordinator(full_query)
@@ -269,13 +290,14 @@ class BedrockRAG:
                       user_id: str = None, uploads_bucket: str = None,
                       meal_plan: Dict = None) -> Dict:
         """Non-streaming variant (used by /chat endpoint)."""
-        full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan = \
+        full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan, last_assistant = \
             self._build_agent_inputs(query, recipes, user_profile, tool_handler, chat_history,
                                      user_id, uploads_bucket, meal_plan)
         try:
             print(f"[CHAT] query={repr(query[:120])}")
             coordinator = self._make_coordinator(
-                logged_tool, get_recipe_context, get_doc_context, meal_plan, user_profile
+                logged_tool, get_recipe_context, get_doc_context, meal_plan, user_profile,
+                last_assistant=last_assistant
             )
             result = coordinator(full_query)
             response_text = _extract_text(result)
