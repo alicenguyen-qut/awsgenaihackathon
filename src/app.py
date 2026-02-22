@@ -532,7 +532,7 @@ def chat():
                     traceback.print_exc()
                     return {"success": False, "error": str(e)}
             
-            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []), user_id=user_id, uploads_bucket=S3_BUCKET, meal_plan=user_data.get('meal_plan', {}))
+            result = bedrock_rag.chat_with_rag(query, recipes, user_profile, tool_handler, current_chat.get('messages', []), user_id=user_id, uploads_bucket=S3_BUCKET, meal_plan=user_data.get('meal_plan', {}), uploaded_files=user_data.get('uploaded_files', []))
             response = result.get('response', '')
             tool_calls = result.get('tool_calls', [])
             
@@ -921,7 +921,8 @@ def chat_stream():
                         current_chat.get('messages', []) if current_chat else [],
                         user_id=user_id, uploads_bucket=S3_BUCKET,
                         meal_plan=user_data.get('meal_plan', {}),
-                        token_callback=on_token
+                        token_callback=on_token,
+                        uploaded_files=user_data.get('uploaded_files', [])
                     )
                     token_queue.put(('__result__', r))
                 except Exception as exc:

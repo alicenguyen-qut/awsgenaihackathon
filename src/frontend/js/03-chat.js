@@ -16,11 +16,12 @@ function renderMarkdown(text) {
         const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[•\-\*] /, '')}</li>`).join('');
         return `<ul style="margin:6px 0 6px 18px;">${items}</ul>`;
     });
-    // Numbered lists
-    html = html.replace(/((?:^\d+\. .+(?:\n|$))+)/gm, (block) => {
-        const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+    // Numbered lists - merge items even when separated by blank lines
+    html = html.replace(/((?:^\d+\. .+$\n?)+)/gm, (block) => {
+        const items = block.trim().split('\n').filter(l => /^\d+\./.test(l.trim())).map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
         return `<ol style="margin:6px 0 6px 18px;">${items}</ol>`;
     });
+    html = html.replace(/<\/ol>(\n|<br>)*<ol[^>]*>/g, '');
     return html.replace(/\n/g, '<br>');
 }
 

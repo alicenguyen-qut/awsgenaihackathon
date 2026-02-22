@@ -125,7 +125,7 @@ class BedrockRAG:
     # ── Multi-Agent helpers ────────────────────────────────────────────────
 
     def _build_agent_inputs(self, query, recipes, user_profile, tool_handler, chat_history,
-                            user_id, uploads_bucket, meal_plan):
+                            user_id, uploads_bucket, meal_plan, uploaded_files=None):
         context = ""
         if meal_plan:
             meal_plan_text = "\n".join(f"- {day}: {meal}" for day, meal in meal_plan.items() if meal)
@@ -150,10 +150,16 @@ class BedrockRAG:
             ])
 
         def get_doc_context():
-            if not (user_id and uploads_bucket):
-                return ""
-            chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
-            return "\n---\n".join(chunks) if chunks else ""
+            # Try S3 semantic search first
+            if user_id and uploads_bucket:
+                chunks = self.search_user_uploads(query, user_id, uploads_bucket, top_k=5)
+                if chunks:
+                    return "\n---\n".join(chunks)
+            # Fallback: use locally stored file content
+            if uploaded_files:
+                combined = "\n---\n".join(f['content'] for f in uploaded_files if f.get('content'))
+                return combined[:4000] if combined else ""
+            return ""
 
         history_text = ""
         for m in (chat_history or [])[-6:]:
@@ -218,7 +224,7 @@ class BedrockRAG:
 
         @tool
         def ask_document(request: str) -> str:
-            """Delegate questions about uploaded documents, dietary restrictions, or allergies to the Document Agent."""
+            """ALWAYS use when the user asks about their uploaded documents, dietary restrictions, allergies, health goals, or any personal health/nutrition information. Do not answer these questions directly."""
             print(f"[COORDINATOR → DOCUMENT] {request}")
             result = _extract_text(make_document_agent(get_doc_context(), user_profile or {}, callback_handler=sub_agent_callback)(request))
             print(f"[DOCUMENT → COORDINATOR] {result[:200]}")
@@ -239,8 +245,8 @@ class BedrockRAG:
                 "## Tools — ONLY when the user explicitly requests one of these exact actions\n"
                 "- ask_planner: 'add to my plan', 'plan my week', 'add to favourites/favorites', 'shopping list'. NEVER for meal ideas, recipe requests, or suggestions.\n"
                 "- ask_nutrition: 'log my meal', 'log my calories', 'how many calories have I had today'. NEVER for food suggestions, recipe questions, or nutrition facts.\n"
-                "- ask_document: user explicitly asks about their uploaded documents or files.\n\n"
-                "If in doubt, answer directly without tools.\n"
+                "- ask_document: ALWAYS use when the user asks about their uploaded documents, dietary restrictions, allergies, health goals, or personal health/nutrition information. NEVER answer these from memory — always call ask_document.\n\n"
+                "If in doubt about food/recipe questions, answer directly without tools.\n"
                 "Never call more than one tool per message.\n"
                 "CRITICAL: After a tool result, write a full response with actual details. Never say vague phrases like 'I\'ve completed the action'."
             ),
@@ -255,11 +261,12 @@ class BedrockRAG:
     def chat_with_rag_stream(self, query: str, recipes: List[Dict], user_profile: Dict = None,
                              tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
                              user_id: str = None, uploads_bucket: str = None,
-                             meal_plan: Dict = None, token_callback=None) -> Dict:
+                             meal_plan: Dict = None, token_callback=None,
+                             uploaded_files: List[Dict] = None) -> Dict:
         """Streaming variant — calls token_callback(text) for each token as it arrives from Bedrock."""
         full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan, last_assistant = \
             self._build_agent_inputs(query, recipes, user_profile, tool_handler, chat_history,
-                                     user_id, uploads_bucket, meal_plan)
+                                     user_id, uploads_bucket, meal_plan, uploaded_files=uploaded_files)
 
         def callback_handler(**kwargs):
             chunk = kwargs.get('data') or kwargs.get('text', '')
@@ -288,11 +295,11 @@ class BedrockRAG:
     def chat_with_rag(self, query: str, recipes: List[Dict], user_profile: Dict = None,
                       tool_handler: Optional[Any] = None, chat_history: List[Dict] = None,
                       user_id: str = None, uploads_bucket: str = None,
-                      meal_plan: Dict = None) -> Dict:
+                      meal_plan: Dict = None, uploaded_files: List[Dict] = None) -> Dict:
         """Non-streaming variant (used by /chat endpoint)."""
         full_query, logged_tool, get_recipe_context, get_doc_context, tool_calls_log, meal_plan, last_assistant = \
             self._build_agent_inputs(query, recipes, user_profile, tool_handler, chat_history,
-                                     user_id, uploads_bucket, meal_plan)
+                                     user_id, uploads_bucket, meal_plan, uploaded_files=uploaded_files)
         try:
             print(f"[CHAT] query={repr(query[:120])}")
             coordinator = self._make_coordinator(
