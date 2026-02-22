@@ -60,17 +60,17 @@
 
 ## 🤖 Multi-Agent System (Strands)
 
-MealBuddy uses a **coordinator + specialist agent** pattern powered by Strands and Claude 3 Haiku on Amazon Bedrock.
+MealBuddy uses a **coordinator + specialist agents** pattern powered by Strands and Claude 3 Haiku on Amazon Bedrock.
 
 ```
 User Message
      │
      ▼
-Coordinator (intent router)
+Coordinator Agent
      │
-     ├──► 🥗 Planner Agent      → meal planning, shopping list, favourites
-     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, snack suggestions
-     └──► 📄 Document Agent     → RAG over uploaded PDFs, dietary restrictions
+     ├──► 🥗 Planner Agent      → meal planning, shopping list, add-to-favourite recipes
+     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, meals suggestions
+     └──► 📄 Document Agent     → RAG over user-uploaded PDFs, dietary restrictions, goals etc.
 ```
 
 | Agent | Triggers | Tools |

@@ -41,6 +41,12 @@ async function loadChat(chatId) {
 async function deleteChat(chatId) {
     showConfirm('Delete this chat?', async () => {
         await fetch(`/api/chat/${chatId}`, { method: 'DELETE' });
+        if (currentChatId === chatId) {
+            currentChatId = null;
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = '';
+            showWelcomeMessage();
+        }
         await loadSession();
         showAlert('Chat deleted!', 'info');
     });
@@ -217,7 +223,7 @@ function showWelcomeMessage() {
         <div class="welcome-message">
             <div class="welcome-icon">🍳</div>
             <h2>MealBuddy 🍳</h2>
-                    <p style="font-size:15px; color:#8b6f8f; font-style:italic; margin-bottom:8px;">Your daily buddy for smarter eating habits</p>
+                    <p style="font-size:15px; color:#8b6f8f; font-style:italic; margin-bottom:8px;">Your Personalised AI Nutrition Buddy</p>
             <div class="suggestions">
                 <div class="suggestion-card" onclick="sendSuggestion('Show me high-protein low-carb recipes')">
                     <div class="suggestion-icon">💪</div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MealBuddy — Your daily buddy for smarter eating habits</title>
+    <title>MealBuddy — Your Personalised AI Nutrition Buddy</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -842,6 +842,16 @@
     </style>
 </head>
 <body>
+    <div class="modal hidden" id="deleteConfirmModal" style="z-index:4000">
+        <div class="modal-content" style="max-width:380px; text-align:center;">
+            <div style="font-size:36px; margin-bottom:12px;">🗑️</div>
+            <h3 style="margin-bottom:8px;">Delete file?</h3>
+            <p style="color:#718096; font-size:14px; margin-bottom:24px;">This action cannot be undone.</p>
+            <button id="deleteConfirmBtn" style="background:linear-gradient(135deg,#fc8181,#f56565);">Delete</button>
+            <button onclick="document.getElementById('deleteConfirmModal').classList.add('hidden')" style="background:#e2e8f0; color:#4a5568;">Cancel</button>
+        </div>
+    </div>
+
     <div class="file-modal hidden" id="fileModal">
         <div class="file-modal-content">
             <div class="file-modal-header">
@@ -855,7 +865,7 @@
         <div class="login-box">
             <div class="login-icon">👨‍🍳</div>
             <h2>MealBuddy</h2>
-            <p>Your daily buddy for smarter eating habits</p>
+            <p>Your Personalised AI Nutrition Buddy</p>
             <input type="text" id="usernameInput" placeholder="Your name" autofocus>
             <input type="password" id="passwordInput" placeholder="Password" onkeypress="handleLoginKeyPress(event)">
             <button onclick="login()">Login / Register</button>
@@ -939,14 +949,14 @@
                 <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
                 <span class="header-icon">🍳</span>
                 <h1>MealBuddy</h1>
-                <span style="font-size:24px; color:#8b6f8f; font-weight:500; z-index:1;">"Your daily buddy for smarter eating habits"</span>
+                <span style="font-size:24px; color:#8b6f8f; font-weight:500; z-index:1;">"Your Personalised AI Nutrition Buddy"</span>
             </div>
             
             <div class="chat-container" id="chatContainer">
                 <div class="welcome-message">
                     <div class="welcome-icon">🍳</div>
                     <h2>MealBuddy</h2>
-                    <p style="font-size:15px; color:#8b6f8f; font-style:italic; margin-bottom:8px;">Your daily buddy for smarter eating habits</p>
+                    <p style="font-size:15px; color:#8b6f8f; font-style:italic; margin-bottom:8px;">Your Personalised AI Nutrition Buddy</p>
                     <div class="suggestions">
                         <div class="suggestion-card" onclick="sendSuggestion('Show me high-protein low-carb recipes')">
                             <div class="suggestion-icon">💪</div>

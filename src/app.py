@@ -844,7 +844,7 @@ def chat_stream():
             elif is_nutrition:
                 yield sse('status', {'message': '📊 Calculating your nutrition stats...'})
             else:
-                yield sse('status', {'message': '🤔 Thinking...'})
+                yield sse('status', {'message': '✨ Thinking...'})
 
             def tool_handler(tool_name, tool_input):
                 try:
