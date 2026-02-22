@@ -158,22 +158,40 @@ class BedrockRAG:
             from models.agents.planner_agent import make_planner_agent
             from models.agents.nutrition_agent import make_nutrition_agent
             from models.agents.document_agent import make_document_agent
+            from strands import Agent, tool
 
             planner = make_planner_agent(logged_tool, meal_plan or {})
             nutrition = make_nutrition_agent(logged_tool, user_profile or {})
             document = make_document_agent(context, user_profile or {})
 
-            q = query.lower()
-            doc_keywords = ["restriction", "allergy", "document", "pdf", "nutritionist", "my file", "uploaded", "dietitian", "intolerance", "avoid", "can i eat", "should i eat"]
-            if upload_doc_context or any(w in q for w in doc_keywords):
-                doc_input = (upload_doc_context + "\n\n" if upload_doc_context else "") + query
-                active_agent, agent_input = document, doc_input
-            elif any(w in q for w in ["calorie", "macro", "remaining", "log", "track", "snack", "how much", "how many"]):
-                active_agent, agent_input = nutrition, full_query
-            else:
-                active_agent, agent_input = planner, full_query
+            @tool
+            def ask_planner(request: str) -> str:
+                """Delegate meal planning, shopping list, or favourites tasks to the Planner Agent."""
+                return str(planner(request))
 
-            result = active_agent(agent_input)
+            @tool
+            def ask_nutrition(request: str) -> str:
+                """Delegate calorie tracking, macro stats, or snack suggestion tasks to the Nutrition Agent."""
+                return str(nutrition(request))
+
+            @tool
+            def ask_document(request: str) -> str:
+                """Delegate questions about uploaded documents, dietary restrictions, or allergies to the Document Agent."""
+                return str(document(request))
+
+            coordinator = Agent(
+                model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0", region_name="ap-southeast-2", max_tokens=300, temperature=0.3),
+                system_prompt=(
+                    "You are the MealBuddy Coordinator. Route each user request to exactly one specialist agent:\n"
+                    "- ask_planner: meal planning, shopping list, favourites\n"
+                    "- ask_nutrition: calorie tracking, macros, remaining budget, snack suggestions\n"
+                    "- ask_document: questions about uploaded PDFs, dietary restrictions, allergies\n"
+                    "Pass the full user request to the chosen agent and return its response verbatim."
+                ),
+                tools=[ask_planner, ask_nutrition, ask_document],
+            )
+
+            result = coordinator(full_query)
             response_text = str(result).strip()
 
             return {"response": response_text, "tool_calls": tool_calls_log}

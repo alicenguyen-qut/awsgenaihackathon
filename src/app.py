@@ -498,7 +498,6 @@ def chat():
                     elif tool_name == "log_nutrition":
                         if 'nutrition_logs' not in user_data:
                             user_data['nutrition_logs'] = []
-                        
                         log = {
                             'id': str(uuid.uuid4()),
                             'date': now_aest().strftime('%Y-%m-%d'),
@@ -513,18 +512,17 @@ def chat():
                         user_data['nutrition_logs'].append(log)
                         storage.save_user_data(user_id, user_data)
                         return {"success": True, "message": f"Logged {log['name']} ({log['calories']} cal)"}
-                    
+
+                    elif tool_name == "get_nutrition_stats":
                         today = now_aest().strftime('%Y-%m-%d')
-                        health_goal = user_data.get('nutrition_profile', {}).get('healthGoal', '')
                         profile = user_data.get('nutrition_profile', {})
                         stats = calculate_nutrition_stats(
-                            user_data.get('nutrition_logs', []), today, health_goal,
+                            user_data.get('nutrition_logs', []), today, profile.get('healthGoal', ''),
                             age=profile.get('age'), weight_kg=profile.get('weight'),
                             height_cm=profile.get('height'), gender=profile.get('gender')
                         )
-                        meal_plan = user_data.get('meal_plan', {})
-                        return {"success": True, "stats": stats, "meal_plan": meal_plan}
-                    
+                        return {"success": True, "stats": stats, "meal_plan": user_data.get('meal_plan', {})}
+
                     else:
                         return {"success": False, "error": f"Unknown tool: {tool_name}"}
                         

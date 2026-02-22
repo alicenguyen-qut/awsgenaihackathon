@@ -8,6 +8,11 @@ REGION = "ap-southeast-2"
 
 def make_planner_agent(tool_handler, meal_plan: dict):
     @tool
+    def search_recipes(query: str, top_k: int = 5) -> str:
+        """Search for recipes matching a query. Use this before planning meals."""
+        return json.dumps(tool_handler("search_recipes", {"query": query, "top_k": top_k}))
+
+    @tool
     def add_to_meal_plan(day: str, meal_name: str) -> str:
         """Add a meal to the weekly plan for a specific day (Monday-Sunday)."""
         return json.dumps(tool_handler("add_to_meal_plan", {"day": day, "meal_name": meal_name}))
@@ -28,10 +33,10 @@ def make_planner_agent(tool_handler, meal_plan: dict):
         model=BedrockModel(model_id=MODEL_ID, region_name=REGION, max_tokens=2000, temperature=0.7),
         system_prompt=(
             "You are the MealBuddy Planner. You handle meal planning, shopping lists, and favourites.\n"
-            "When planning a week, call add_to_meal_plan exactly 7 times — Monday through Sunday — with a different meal each day.\n"
-            "When generating a shopping list, derive all ingredients from the current meal plan below and call add_to_shopping_list once with the full list.\n"
+            "When planning a week, first call search_recipes to find suitable meals, then call add_to_meal_plan exactly 7 times — Monday through Sunday.\n"
+            "When generating a shopping list, derive all ingredients from the current meal plan and call add_to_shopping_list once with the full list.\n"
             "Always respect the user's dietary restrictions and allergies.\n"
             f"Current meal plan:\n{meal_plan_text}"
         ),
-        tools=[add_to_meal_plan, add_to_shopping_list, add_to_favorites],
+        tools=[search_recipes, add_to_meal_plan, add_to_shopping_list, add_to_favorites],
     )

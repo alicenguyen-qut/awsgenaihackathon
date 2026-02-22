@@ -86,7 +86,7 @@ async function updateDashboard() {
                     ${b.adjustment !== 0 ? `Goal adjustment (${b.inputs?.health_goal}): <strong>${b.adjustment > 0 ? '+' : ''}${b.adjustment} cal</strong><br>` : ''}
                     Daily goal: <strong>${b.goal} cal</strong>
                    </div>`
-                : `<div style="margin-top:12px;padding:8px 14px;background:rgba(160,174,192,0.08);border-radius:10px;border-left:3px solid #a0aec0;font-size:12px;color:#718096;">
+                : `<div style="margin-top:12px;padding:8px 14px;background:rgba(160,174,192,0.08);border-radius:10px;border-left:3px solid #a0aec0;font-size:12px;color:#2d3748;">
                     💡 Goal based on <strong>${b.health_goal || 'default'}</strong> preset. Add your age, weight, height &amp; gender in Settings for a personalised goal.
                    </div>`;
             statsEl.style.display = 'block';
@@ -94,8 +94,8 @@ async function updateDashboard() {
                 <div style="background:linear-gradient(135deg,#f8f9ff,#f0f4ff);border:1px solid rgba(116,185,255,0.2);border-radius:20px;padding:20px 24px;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
                         <div>
-                            <div style="font-size:11px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔥 Calories Today</div>
-                            <div style="font-size:32px;font-weight:800;color:#2d3748;line-height:1;">${s.calories}<span style="font-size:16px;font-weight:400;color:#cbd5e0;"> / ${goal}</span></div>
+                            <div style="font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔥 Calories Today</div>
+                            <div style="font-size:32px;font-weight:800;color:#2d3748;line-height:1;">${s.calories}<span style="font-size:16px;font-weight:400;color:#718096;"> / ${goal}</span></div>
                         </div>
                         <div style="text-align:center;background:${over ? 'linear-gradient(135deg,#fff5f5,#fed7d7)' : 'linear-gradient(135deg,#f0fff4,#c6f6d5)'};border-radius:14px;padding:10px 16px;min-width:80px;">
                             <div style="font-size:10px;font-weight:700;color:${over ? '#c53030' : '#276749'};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${over ? 'Over' : 'Left'}</div>
@@ -239,6 +239,7 @@ window.submitMealLog = async () => {
 };
 
 window.deleteMealLog = async (logId) => {
+    if (!confirm('Delete this meal log?')) return;
     const result = await deleteLog(logId);
     if (result.success) {
         await updateDashboard();

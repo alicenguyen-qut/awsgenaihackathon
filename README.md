@@ -1,4 +1,4 @@
-# 🍳 MealBuddy - Your Daily Buddy for Smarter Eating Habits
+# 🍳 MealBuddy - Your Personalised AI Nutrition Buddy, Powered by Multi-Agent Intelligence
 
 > **ANZ Diversity Hackathon 2026 - Team 54 - MealBuddy**
 
@@ -18,7 +18,7 @@ The intent to eat better is not the problem. Research consistently shows that **
 
 ### 1.2 MealBuddy - The Solution, Vision and Value Proposition
 
-MealBuddy's vision is to address the gap of **fragmented, generic, and inaccessible nutrition tools** - delivering **personalised, proactive nutrition support** by combining recipe search, meal planning, shopping lists, and nutrition tracking in a **single AI-powered conversation**.
+MealBuddy's vision is to address the gap of **fragmented, generic, and inaccessible nutrition tools** - delivering **personalised, proactive nutrition support** by combining meal suggestions, recipe searches and planning, shopping lists, and nutrition tracking in a **single AI-powered conversation**.
 
 | Value Proposition | How MealBuddy Helps |
 |---|---|
@@ -102,9 +102,9 @@ User Message
      ▼
 Coordinator Agent
      │
-     ├──► 🥗 Planner Agent      → meal planning, shopping list, favourites
-     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, snack suggestions
-     └──► 📄 Document Agent     → RAG over uploaded PDFs, dietary restrictions
+     ├──► 🥗 Planner Agent      → meal planning, shopping list, add-to-favourite recipes
+     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, meals suggestions
+     └──► 📄 Document Agent     → RAG over user-uploaded PDFs, dietary restrictions, goals etc.
 ```
 **Hackathon Architecture Diagram**
 
