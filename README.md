@@ -113,7 +113,7 @@ Meal kit services like HelloFresh and Marley Spoon are a natural integration opp
 
 **Why This Architecture:**
 
-We chose this stack to validate the full product concept end-to-end within hackathon constraints – fast to deploy, zero infrastructure overhead, cost-optimised, yet production-ready. This demonstrates **solution viability** with a clear path to scale. 
+We chose this stack to validate the full product concept end-to-end within hackathon constraints – fast to deploy, zero infrastructure overhead, cost-optimised, yet production-ready. This demonstrates **solution viability** with a feasible path to scale. 
 
 ```
 User
@@ -173,6 +173,8 @@ Each specialist agent has focused tasks, significantly improving reliability com
 | Strands Agents (open source) | Multi-agent orchestration | Coordinator routes to specialist agents (Planner, Nutrition, Document) for focused, reliable responses |
 | NumPy cosine similarity | RAG retrieval | Embedding search – quick, easy, and no-cost to implement |
 | CloudFormation | IaC / CI-CD | Deploys entire stack (Beanstalk app, S3, IAM) in one template – reusable and faster deployment compared to ClickOps |
+
+*Note that our knowledge base data for RAG embeddings are quite limited in the scope of this hackathon. In the future, we plan to crawl data from government and well-known nutrition sites to enrich our knowledge base.*
 
 ---
 
@@ -250,7 +252,7 @@ Infrastructure:
 
 ## 4. Live Application Link
 
-🌐 **[Try MealBuddy Now](http://mealbuddy.eba-wgpw3rds.ap-southeast-2.elasticbeanstalk.com/)**
+🌐 **[MealBuddy WebApp](http://mealbuddy.eba-wgpw3rds.ap-southeast-2.elasticbeanstalk.com/)**
 
 ---
 
