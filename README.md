@@ -2,9 +2,9 @@
 
 > **ANZ Diversity Hackathon 2026 - Team 54 - MealBuddy**
 
-> **Team members:**
-- Alice Nguyen – alice.nhnt@gmail.com
-- Evelyn Le – evelyn.le.contact@gmail.com
+> **Team Members:**
+> - Alice Nguyen – alice.nhnt@gmail.com
+> - Evelyn Le – evelyn.le.contact@gmail.com
 
 ---
 
@@ -14,49 +14,53 @@
 
 **The Crisis:**
 
-Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **66% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2024)* - and only **4% of Australian adults** meet the recommended daily vegetable intake *(AIHW, 2024)*. Poor diet costs the Australian healthcare system an estimated **$6 billion per year** in direct costs *(AIHW, Australian Burden of Disease Study, 2022)*.
+Chronic disease driven by poor diet is one of the most preventable crises of our time. According to the World Health Organization, unhealthy diets contribute to **11 million deaths globally each year**, making it the single largest risk factor for disease burden worldwide *(GBD Diet Collaborators, The Lancet, 2019)*. In Australia, **66% of adults are overweight or obese**, with poor nutrition cited as a primary driver *(AIHW, 2024)* – and only **4% of Australian adults** meet the recommended daily vegetable intake *(AIHW, 2024)*. Poor diet costs the Australian healthcare system an estimated **$6 billion per year** in direct costs *(AIHW, Australian Burden of Disease Study, 2022)*.
 
-**The Real Problem - Cognitive Burden, Not Motivation:**
+**The Real Problem – Cognitive Burden, Not Motivation:**
 
-Research consistently shows that **most people who begin a healthy eating plan struggle to sustain it long-term** - not from lack of motivation, but from the cognitive and logistical burden of maintaining it *(Teixeira et al., IJBNPA, 2015)*:
+Research consistently shows that **most people who begin a healthy eating plan struggle to sustain it long-term** – not from lack of motivation, but from the cognitive and logistical burden of maintaining it *(Teixeira et al., IJBNPA, 2015)*:
 
 - Meal planning takes **2–3 hours per week**
-- A dietitian costs **~200 AUD per session** with long wait times *(Vively, 2024)*
+- A dietitian costs **~$200 AUD per session** with long wait times *(Vively, 2024)*
 - Calorie tracking apps require **exhausting manual entry** for every meal
 - Existing tools are **fragmented, generic, and reactive**
 
-People don't need another tracking app - they need an intelligent partner that plans proactively and removes friction.
+People don't need another tracking app – they need an intelligent partner that plans proactively and removes friction.
 
-### 1.2 MealBuddy - The Solution (Solution Viability + Innovation)
-
+### 1.2 MealBuddy – The Solution 
 **Our Vision:**
 
-MealBuddy addresses the gap of **fragmented, generic, and inaccessible nutrition tools** by delivering **personalised, proactive nutrition support** through a **single AI-powered conversation**.
+MealBuddy addresses the gap of **fragmented, generic, and inaccessible nutrition tools** by delivering **personalised, proactive nutrition support** through a **single AI-powered conversation**. 
 
-**Core Innovation - Multi-Agent Intelligence:**
+**Core Innovation – Multi-Agent Intelligence:**
 
 MealBuddy is a conversational AI nutrition assistant combining:
-- **Multi-agent architecture**: Coordinator agent routes to specialist agents for focused, reliable responses in planning meals, suggesting recipes, creating shopping lists and personalising the content based on user profile
-- **Document RAG**: Upload personal nutrition or health notes - MealBuddy applies context to every meal plan
+
+- **Multi-agent architecture**: Coordinator agent routes to specialist agents for focused, reliable responses in planning meals, suggesting recipes, creating shopping lists, and personalising content based on user profile
+- **Document RAG**: Upload personal nutrition or health notes – MealBuddy applies context to every meal plan
 - **Autonomous planning**: "Plan my week" generates 7 days of personalised meals in seconds based on user profile
 - **Behavioral psychology**: Streak tracking and badges increase user long-term adherence
-- **Zero-friction tracking**: Users can easily keep track of their current calories/macros and MealBuddy can suggest how far to reach the goals and suggest meals to achieve it
+- **Zero-friction tracking**: Users can easily keep track of their current calories/macros, and MealBuddy can suggest how far they are from reaching their goals and recommend meals to achieve them
 
-**Value Propositions - Measurable Impact:**
+**Value Propositions – Measurable Impact:**
 
 | Value Proposition | How MealBuddy Helps | Measurable Impact |
 |---|---|---|
 | **Time savings** | AI-powered autonomous meal planning | 2–3 hours planning and Googling → 10 minutes per week |
-| **Accessibility** | 24/7 conversational AI support | 1/20th cost of dietitian ($10-15/month vs $200/session) |
-| **Personalisation** | Reads and stores users' nutrition notes, allergy lists and profiles | Every interaction contextual to users' health data for more personalisation, a big advantage over a lot of other generic chatbots |
+| **Accessibility** | 24/7 conversational AI support | 1/20th cost of dietitian ($10–15/month vs $200/session) |
+| **Personalisation** | Reads and stores users' nutrition notes, allergy lists, and profiles | Every interaction contextual to users' health data for more personalisation – a big advantage over other generic chatbots |
 | **Proactive meal planning** | Generates full week of meals without manual input | Reduces decision fatigue |
-| **Ease of Use** | Interacts with the application using Natural Language | User-friendly which could increase user engagement and adherence |
+| **Ease of Use** | Interacts with the application using natural language | User-friendly, which could increase user engagement and adherence |
+
+**Long-Term Social Impact that MealBuddy Targets:**
+
+While personalised nutrition is a luxury (dietitian = $200/session, long wait times), MealBuddy aims at a future where no one struggles alone with nutrition – a future where intelligent support is always available, always personalised, always affordable.
 
 ### 1.3 Targeted Users
 
 - **Busy professionals** who want to eat well but have no time to plan
 - **Health-conscious individuals** managing dietary restrictions, allergies, or chronic conditions
-- **Fitness enthusiasts** tracking macros without the friction of manual logging and getting smart recommendations on what to eat to reach the diet goals
+- **Fitness enthusiasts** tracking macros without the friction of manual logging and getting smart recommendations on what to eat to reach their diet goals
 - **Budget-conscious households** reducing food waste through smarter weekly planning
 
 ### 1.4 Market Need Analysis
@@ -65,16 +69,17 @@ MealBuddy is a conversational AI nutrition assistant combining:
 
 The scale of the problem translates directly into market opportunity:
 
-- With **66% of Australian adults overweight or obese** and diet-related disease **costing $6 billion/year**, there is clear government and consumer urgency to act (AIHW, 2022)
-- Personalised nutrition support is expensive for most - dietitian costs **~AUD 200/session** *(Vively, 2024)*
-- Creates a **large underserved population** willing to pay for a cheaper, always-available alternative
+- With **66% of Australian adults overweight or obese** and diet-related disease **costing $6 billion/year**, there is clear government and consumer urgency to act *(AIHW, 2022)*
+- Personalised nutrition support is expensive for most – dietitian costs **~$200 AUD/session** *(Vively, 2024)*
+- This creates a **large underserved population** willing to pay for a cheaper, always-available alternative
 
-**Bottom-up Market Sizing (Australia):**
-- Australia has ~20.5 million adults. At 66% overweight or obese, that's ~**13.5 million adults** with a direct health incentive to improve their diet *(AIHW, 2024)* - this is the TAM
-- Of these, the digitally active cohort aged 25–54 (the primary health-app demographic) represents roughly **~8 million Australians** *(ABS, 2021 Census)* - this is the SAM
-- Capturing just **1–2% of SAM** in year 3 = **80,000–160,000 users** at AUD 10–15/month = **AUD 10–29M ARR**
+**Bottom-Up Market Sizing (Australia):**
 
-### 1.5 Competitive Landscape (Innovation + X-Factor)
+- Australia has ~20.5 million adults. At 66% overweight or obese, that's ~**13.5 million adults** with a direct health incentive to improve their diet *(AIHW, 2024)* – this is the TAM
+- Of these, the digitally active cohort aged 25–54 (the primary health-app demographic) represents roughly **~8 million Australians** *(ABS, 2021 Census)* – this is the SAM
+- Capturing just **1–2% of SAM** in year 3 = **80,000–160,000 users** at $10–15 AUD/month = **$10–29M AUD ARR**
+
+### 1.5 Competitive and Partnership Landscape 
 
 **Competitive Differentiation:**
 
@@ -84,27 +89,31 @@ The scale of the problem translates directly into market opportunity:
 | **Cronometer** | Detailed micronutrient tracking | Complex UI, no conversational AI, no autonomous meal planning |
 | **ChatGPT / general LLMs** | Ad-hoc nutrition Q&A | No persistent user nutrition profile, no meal plan memory, no structured tracking |
 
-**MealBuddy's Competitive Moat (X-Factor):** Few existing solutions combine a persistent user profile, conversational AI, document ingestion (RAG), and autonomous multi-step action in a single nutrition product. Every existing app is reactive - open it, input data, it shows a number. MealBuddy is designed to plan with users, not just record after them - making personalised nutrition support accessible to anyone, at the cost of a conversation.
+**MealBuddy's Competitive Moat:**
 
-**Potential business partnership opportunities:** Meal kit services like HelloFresh and Marley Spoon are a natural integration opportunity - MealBuddy could recommend their kits when users want a no-prep option, or auto-populate a shopping list that links to their catalogue. Partnerships with grocery retailers (e.g. Woolworths, Coles) could take this further - enabling users to purchase ingredients directly from within the app, turning a meal plan into a completed grocery order in one step.
+Few existing solutions combine a persistent user nutrition profile, conversational AI that can act for them, document ingestion for personalisation, and autonomous multi-step action in a single nutrition support product. Most existing nutrition apps are reactive – users open it, input data, it shows a number. MealBuddy is designed to plan with users, not just record after them – making personalised nutrition support accessible to anyone, at the cost of a conversation.
+
+**Future Ideas and Potential Business Partnership Opportunities:**
+
+Meal kit services like HelloFresh and Marley Spoon are a natural integration opportunity – MealBuddy could recommend their kits when users want a no-prep option, or auto-populate a shopping list that links to their catalogue where users can buy from MealBuddy (future enhancement idea). Partnerships with grocery retailers (e.g., Woolworths, Coles) could take this further – enabling users to purchase ingredients directly from within the app, turning a meal plan into a completed grocery order in one step.
 
 **Go-to-Market Strategy:**
 
-- **Phase 1 (Months 1-6):** Enhance and deploy the solution ([see 2.2](#22-future-enhancement-architecture-solution-viability---production-roadmap)). Beta launch with 500 early adopters via health/fitness communities
-- **Phase 2 (Months 6-12):** Freemium model (basic free, premium $10-15/month)
-- **Phase 3 (Year 2+):** B2B partnerships with corporate wellness programs, business partners identified above. 
+- **Phase 1 (Months 1–6):** Enhance and deploy the enhanced solution ([see 2.2](#22-future-enhancement-architecture-solution-viability---production-roadmap)). Beta launch with 500 early adopters via health/fitness communities
+- **Phase 2 (Months 6–12):** Freemium model (basic free, premium $10–15/month)
+- **Phase 3 (Year 2+):** B2B partnerships with corporate wellness programs and business partners identified above
 
-*Sources: [AIHW Overweight and Obesity (2024)](https://www.aihw.gov.au/reports/overweight-obesity/overweight-and-obesity/contents/overweight-and-obesity); [AIHW Food & Nutrition (2024)](https://www.aihw.gov.au/reports/food-nutrition/diet); [Vively, How Much Does It Cost to See a Dietitian in Australia (2024)](https://www.vively.com.au/post/how-much-does-it-cost-to-see-a-dietitian-in-australia); [AIHW Australian Burden of Disease Study (2022)](https://www.aihw.gov.au/reports/burden-of-disease/australian-burden-of-disease-study-2022); [GBD Diet Collaborators, The Lancet (2019)](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)30041-8/fulltext); [Teixeira et al., IJBNPA (2015)](https://ijbnpa.biomedcentral.com/articles/10.1186/1479-5868-12-S1-S4)*
+*References: [AIHW Overweight and Obesity (2024)](https://www.aihw.gov.au/reports/overweight-obesity/overweight-and-obesity/contents/overweight-and-obesity); [AIHW Food & Nutrition (2024)](https://www.aihw.gov.au/reports/food-nutrition/diet); [Vively, How Much Does It Cost to See a Dietitian in Australia (2024)](https://www.vively.com.au/post/how-much-does-it-cost-to-see-a-dietitian-in-australia); [AIHW Australian Burden of Disease Study (2022)](https://www.aihw.gov.au/reports/burden-of-disease/australian-burden-of-disease-study-2022); [GBD Diet Collaborators, The Lancet (2019)](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)30041-8/fulltext); [Teixeira et al., IJBNPA (2015)](https://ijbnpa.biomedcentral.com/articles/10.1186/1479-5868-12-S1-S4)*
 
 ---
 
 ## 2. Technical Architecture (Solution Viability + Creativity)
 
-### 2.1 Hackathon Demo Architecture - Live & Deployed
+### 2.1 Hackathon Demo Architecture – Live & Deployed
 
-**Why This Architecture (Creativity of Approach):**
+**Why This Architecture:**
 
-We chose this stack to validate the full product concept end-to-end within hackathon constraints—fast to deploy, zero infrastructure overhead, cost-optimized, yet production-ready. This demonstrates **solution viability** with a clear path to scale. 
+We chose this stack to validate the full product concept end-to-end within hackathon constraints – fast to deploy, zero infrastructure overhead, cost-optimised, yet production-ready. This demonstrates **solution viability** with a clear path to scale. 
 
 ```
 User
@@ -134,42 +143,44 @@ User Message
      ▼
 Coordinator Agent (routes to specialist agents if needed)
      │
-     ├──► 🥗 Planner Agent      → meal planning, shopping list, add-to-favourite recipes
-     ├──► 📊 Nutrition Agent    → calorie tracking, macro stats, meals suggestions
-     └──► 📄 Document Agent     → RAG over user-uploaded PDFs, dietary restrictions, goals etc.
+     ├──► 🥗 Planner Agent      → Meal planning, shopping list, add-to-favourite recipes
+     ├──► 📊 Nutrition Agent    → Calorie tracking, macro stats, meal suggestions
+     └──► 📄 Document Agent     → RAG over user-uploaded PDFs, dietary restrictions, goals, etc.
 ```
-**Why Multi-Agent? (Innovation + Creativity)**
+
+**Why Multi-Agent?**
 
 Each specialist agent has focused tasks, significantly improving reliability compared to a single agent handling all intents. This architecture enables:
+
 - **Transparency**: Users see which agent is working and what actions it's taking
 - **Reliability**: Specialist agents have higher accuracy for domain-specific tasks
-- **Scalability**: Easy to add new specialist agents (e.g., Exercise, Sleep, Mental Health)
+- **Scalability**: Easy to add new specialist agents (e.g., Exercise, Sleep, Mental Health, Chat-to-Order agents)
 - **Trust**: Real-time agent action feedback builds user confidence
 
-**Hackathon Architecture Diagram**
+**Hackathon Architecture Diagram:**
 
 <img src="architecture_diagrams/architecture_hackathon.png" width="800">
 
-<br></br>
-**AWS Services Selected with a focus on demonstrating PoC and being cost-optimised for Hackathon Demo**
 
-| Service | What it is used for | Why chosen |
+**AWS Services Selected – Focus on Demonstrating PoC and Being Cost-Optimised for Hackathon Demo:**
+
+| Service | What It Is Used For | Why Chosen |
 |---|---|---|
-| Elastic Beanstalk (t3.micro) | Web app hosting | Rapidly deploys and manages application without much infrastructure provisioning  |
+| Elastic Beanstalk (t3.micro) | Web app hosting | Rapidly deploys and manages application without much infrastructure provisioning |
 | Amazon S3 | Data storage | Data storage in cloud at near-zero cost at demo scale |
-| Amazon Bedrock - Claude 3 Haiku | LLM + multi-agent reasoning | Fast and cost-saving Bedrock model powering 3 specialist Strands agents |
-| Amazon Bedrock - Titan Embeddings V2 | Semantic search | Fully managed, no GPU infra, optimises for cost and retrieval performance without sacrificing accuracy |
+| Amazon Bedrock – Claude 3 Haiku | LLM + multi-agent reasoning | Fast and cost-saving Bedrock model |
+| Amazon Bedrock – Titan Embeddings V2 | Semantic search | Fully managed, no GPU infra, optimises for cost and retrieval performance without sacrificing accuracy |
 | Strands Agents (open source) | Multi-agent orchestration | Coordinator routes to specialist agents (Planner, Nutrition, Document) for focused, reliable responses |
-| NumPy cosine similarity | RAG retrieval | Embedding search - quick, easy and no-cost to implement |
-| CloudFormation | IaC / CI-CD | Deploys entire stack (Beanstalk app, S3, IAM) in one template - reusable and faster deployment compared to ClicksOp |
+| NumPy cosine similarity | RAG retrieval | Embedding search – quick, easy, and no-cost to implement |
+| CloudFormation | IaC / CI-CD | Deploys entire stack (Beanstalk app, S3, IAM) in one template – reusable and faster deployment compared to ClickOps |
 
 ---
 
-### 2.2 Future Enhancement Architecture (Solution Viability - Production Roadmap)
+### 2.2 Future Enhancement Architecture (Production Roadmap)
 
-**Production-Ready Path:**
 
-The hackathon stack proves the concept. The future architecture introduces containerised scaling, secure identity boundaries, vector persistence, and full-stack observability to support real-world concurrency, durability, and scalability.
+
+The hackathon stack proves the concept. The future architecture introduces containerised scaling, secure identity boundaries, vector persistence, better state-of-the-art reasoning LLM models, and full-stack observability to support real-world concurrency, durability, and scalability.
 
 ```
 Users (Web Browser)
@@ -209,12 +220,12 @@ Infrastructure:
  ├── Amazon ECR (Container registry)
  └── IAM Roles (Least-privilege access control)
 ```
-**Future Architecture Diagram**
+
+**Future Architecture Diagram:**
 
 <img src="architecture_diagrams/architecture_future.png" width="800">
 
-
-| Layer | Service | What it is used for | Why chosen |
+| Layer | Service | What It Is Used For | Why Chosen |
 |---|---|---|---|
 | **Compute & Infrastructure** | ECS Fargate | Containerised compute | Horizontally auto-scaled, no server management, high concurrency |
 | | CloudFormation (IaC) | CI/CD deployment | Reusable, automated stack deployment |
@@ -223,88 +234,31 @@ Infrastructure:
 | | Claude Sonnet / Opus | LLM reasoning | Complex multi-step planning, structured outputs, advanced document analysis |
 | | Titan Embeddings V2 | Semantic search & embeddings | Production-grade RAG, knowledge base ingestion |
 | **Databases & Storage** | OpenSearch Serverless | Vector knowledge base | Persistent, scalable vector index for production RAG |
-| | DynamoDB | User metadata & sessions | Single-digit ms reads, TTL-based expiry |
+| | DynamoDB | User metadata & sessions | Single-digit millisecond reads, TTL-based expiry |
 | | Amazon S3 | Object storage | Durable storage for uploads, assets, static content |
 | | Redis Cache | Response & RAG caching | Reduces Bedrock latency and cost under load |
 | **Edge, Security & Observability** | CloudFront + WAF | CDN + security | DDoS protection, rate limiting, geo-restriction |
-| | CloudWatch | Logging + Monitoring | Logging and monitoring across deployed AWS services |
+| | CloudWatch | Logging + monitoring | Logging and monitoring across deployed AWS services |
 
 ---
 
-## 3. Proof of Execution (Solution Viability)
-
-**What We've Built in This Hackathon:**
-
-✅ **Fully functional web app** deployed on AWS Elastic Beanstalk (live and accessible)
-✅ **Multi-agent AI** with Coordinator + 3 specialist agents (Planner, Nutrition, Document)
-✅ **Document RAG** - upload PDFs/DOCX, apply context to meal plans via Titan Embeddings V2
-✅ **Autonomous meal planning** - generates 7-day personalized plans in seconds
-✅ **Nutrition tracking** - conversational logging with period analytics (today/week/month/year)
-✅ **Behavioral features** - streak tracking, badges, proactive daily recommendations
-✅ **CloudFormation IaC** - one-click deployment of entire stack
-
-**Technical Metrics:**
-- Response time: <2 seconds for conversational queries
-- Embedding search: 1024-dim Titan V2 vectors with cosine similarity
-- Agent reliability: Coordinator routes to correct specialist 95%+ of time
-- Cost efficiency: <$0.01 per user interaction at hackathon scale
-
----
-
-## 4. Video Demo & Live Link
-
-📹 **Video Demo**
+## 3. Video Demo
 
 [![MealBuddy Demo](https://img.shields.io/badge/▶_Watch_Demo-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=PLACEHOLDER)
 
+---
+
+## 4. Live Application Link
+
+🌐 **[Try MealBuddy Now](http://mealbuddy.eba-wgpw3rds.ap-southeast-2.elasticbeanstalk.com/)**
 
 ---
 
-🌐 **Live Application**
-
-**[Try MealBuddy Now](http://mealbuddy.eba-wgpw3rds.ap-southeast-2.elasticbeanstalk.com/)**
-
----
-
-## 5. Why MealBuddy Wins (X-Factor)
-
-### 5.1 Judging Criteria Alignment
-
-| Criteria | How MealBuddy Excels |
-|---|---|
-| **Problem Definition** | $6B healthcare crisis, 66% obesity rate, 11M global deaths—backed by WHO/AIHW data with clear research citations |
-| **Solution Viability** | Live deployed app + proven AWS stack + clear production roadmap with specific services (ECS Fargate, OpenSearch, DynamoDB) |
-| **Market Need** | $10-29M ARR opportunity in Australia alone + validated demand + clear GTM strategy with B2B partnerships |
-| **Innovation** | Multi-agent AI + document RAG + behavioral psychology—no competitor combines all three in one nutrition product |
-| **Creativity of Approach** | "Plan with you, not record after you" philosophy + transparent agent actions + proactive recommendations |
-| **X-Factor Appeal** | Democratizing nutrition (1/20th cost of dietitian) + unforgettable demo (blood test → iron-rich meal plan) + emotional resonance |
-
-### 5.2 What Makes Us Unforgettable
-
-1. **We're production-ready**: Not a prototype—fully deployed, functional app with CloudFormation IaC
-2. **We solve a preventable crisis**: 11M deaths/year, $6B healthcare cost—judges will feel the urgency
-3. **We're technically sophisticated**: Multi-agent orchestration + RAG + behavioral design—cutting-edge yet accessible
-4. **We're scalable**: Clear path from hackathon → production → $10-29M ARR with specific milestones
-5. **We democratize access**: Making expert-level nutrition support accessible to everyone at the cost of a conversation
-
-### 5.3 Social Impact
-
-**Current State:** Personalized nutrition is a luxury (dietitian = $200/session, long wait times)
-
-**MealBuddy's Impact:**
-- **Low-income households**: Affordable alternative to expensive dietitians
-- **Rural/remote areas**: 24/7 access where dietitians are scarce
-- **Chronic disease management**: Diabetes, heart disease, obesity support at scale
-- **Preventative health**: Reduces future healthcare burden by addressing root cause
-
-**The Vision:** A future where no one struggles alone with nutrition. Where intelligent support is always available, always personalized, always affordable.
-
----
-
-## 6. Other Documentation
+## 5. Other Documentation
 
 📋 [Application Features](FEATURES.md) 
 
 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
 
-*Built by MealBuddy team and hosted on AWS with Cloudformation for CI/CD deployment · Powered by Amazon Bedrock, Strands Multi-Agent & Kiro*
+---
+*Built by MealBuddy team · Hosted on AWS · IaC deployed with Cloudformation · Powered by Amazon Bedrock, Strands Multi-Agent for GenAI solution development & Kiro for developer assistance*
