@@ -263,4 +263,6 @@ Infrastructure:
 🛠️ [Developer Guide](DEVELOPER-GUIDE.md)
 
 ---
-*Built by MealBuddy team · Hosted on AWS · IaC deployed with Cloudformation · Powered by Amazon Bedrock, Strands Multi-Agent for GenAI solution development & Kiro for developer assistance*
+*Built by MealBuddy team tackling a problem we face ourselves · Seeking investment to scale this project beyond the hackathon*
+
+*Hosted on AWS · IaC deployed with Cloudformation · Powered by Amazon Bedrock, Strands Multi-Agent for GenAI solution development & Kiro for developer assistance*
