@@ -105,7 +105,7 @@ chmod +x scripts/cleanup.sh
 ```
 awsgenaihackathon/
 ├── architecture_diagrams/         # AWS architecture diagrams 
-├── data/                          # Recipe documents (RAG source - gitignored)
+├── data/                          # Recipe documents
 │   ├── nutrition_guidelines.txt
 │   └── recipe_*.txt             
 ├── infrastructure/
@@ -113,7 +113,8 @@ awsgenaihackathon/
 ├── scripts/
 │   ├── deploy.sh                  # Deploys AWS resources
 │   ├── cleanup.sh                 # Destroys AWS resources
-│   └── index_recipes.py           # Indexes recipes → S3 embeddings
+│   ├── index_recipes.py           # Indexes recipes → S3 embeddings
+│   └── misc/                      # Miscellaneous utility scripts
 ├── src/
 │   ├── app.py                     # Flask app + all API routes
 │   ├── models/
