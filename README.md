@@ -99,7 +99,7 @@ Meal kit services like HelloFresh and Marley Spoon are a natural integration opp
 
 **Go-to-Market Strategy:**
 
-- **Phase 1 (Months 1–6):** Enhance and deploy the enhanced solution ([see 2.2](#22-future-enhancement-architecture-solution-viability---production-roadmap)). Beta launch with 500 early adopters via health/fitness communities
+- **Phase 1 (Months 1–6):** Enhance and deploy the enhanced solution ([see 2.2](#22-future-enhancement-architecture-production-roadmap)). Beta launch with 500 early adopters via health/fitness communities
 - **Phase 2 (Months 6–12):** Freemium model (basic free, premium $10–15/month)
 - **Phase 3 (Year 2+):** B2B partnerships with corporate wellness programs and business partners identified above
 
@@ -135,7 +135,7 @@ AWS Elastic Beanstalk  (t3.micro EC2)
        └── uploads/                (User-uploaded documents + embeddings)
 ```
 
-**Multi-Agent Architecture (Strands)**
+**Multi-Agent Architecture (Strands):**
 
 ```
 User Message
