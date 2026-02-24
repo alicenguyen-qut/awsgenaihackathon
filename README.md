@@ -246,7 +246,7 @@ Infrastructure:
 
 ## 3. Video Demo
 
-[![MealBuddy Demo](https://img.shields.io/badge/▶_Watch_Demo-red?style=for-the-badge&logo=youtube)](https://photos.google.com/share/AF1QipOLRzOBG5nrR3DxxGEK0JfqLlKr7RW5FzsjATJrQRcdTRTyzIzYsbwzxjXN695zKQ/photo/AF1QipPUepTChLRCeFFUCFagHtqvt9QwJZCNMYYZL-Vr?key=RXd4NFpNNUp2XzdRUXQ0a1ZGSW41QTZ1TVN1S3pn)
+[![MealBuddy Demo](https://img.shields.io/badge/Watch_Demo-red?style=for-the-badge&logo=youtube)](https://photos.google.com/share/AF1QipOLRzOBG5nrR3DxxGEK0JfqLlKr7RW5FzsjATJrQRcdTRTyzIzYsbwzxjXN695zKQ/photo/AF1QipPUepTChLRCeFFUCFagHtqvt9QwJZCNMYYZL-Vr?key=RXd4NFpNNUp2XzdRUXQ0a1ZGSW41QTZ1TVN1S3pn)
 
 ---
 
