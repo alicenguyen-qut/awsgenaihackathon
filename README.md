@@ -148,7 +148,7 @@ Coordinator Agent (routes to specialist agents if needed)
      └──► 📄 Document Agent     → RAG over user-uploaded PDFs, dietary restrictions, goals, etc.
 ```
 
-**Why Multi-Agent?**
+**Why Multi-Agent:**
 
 Each specialist agent has focused tasks, significantly improving reliability compared to a single agent handling all intents. This architecture enables:
 
